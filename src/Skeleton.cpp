@@ -52,7 +52,7 @@ const char* vertSource = R"(
 	void main() {
 		gl_Position = vec4(vtxPos, 1) * MVP; // to NDC
 		vec4 wPos = vec4(vtxPos, 1) * M;
-		wLight = vec3(1, 2, 3)/wPos.w;
+		wLight = vec3(1, 2, 3);
 		wView = wEye - wPos.xyz/wPos.w;
 		wNormal = (Minv * vec4(vtxNorm, 0)).xyz;
 	}
@@ -87,9 +87,9 @@ vec3 operator / (vec3 a, vec3 b) {
 }
 
 class Camera {
+	public:
 	vec3 wEye, wLookat, wVup;
 	float fov, asp, fp, bp;
-	public:
 	Camera() {
 		fov = M_PI/4;
 		asp = 1;
@@ -211,9 +211,8 @@ class ParamSurface : public Geometry {
 };
 
 class Plane : public ParamSurface {
-
 	public:
-	Plane(vec3 pos, vec3 scale, vec3 rot) {
+	Plane(vec3 pos, vec3 scale = vec3(1,1,1), vec3 rot = vec3(0,0,0)) {
 		this->pos = pos;
 		this->scale = scale;
 		this->rot = rot;
@@ -222,16 +221,17 @@ class Plane : public ParamSurface {
 	VertexData GenVertexData(float u, float v) {
 		VertexData vd;
 		vd.tex = vec2(u,v);
-		vd.pos = vec3(u, v, 0);
+		vd.pos = vec3(u-0.5, v-0.5, 0);
 		vd.norm = vec3(0, 0, 1);
 		return vd;
 	}
 };
 
+
 std::vector<Geometry*> objects;
 void onInitialization(){
 	glViewport(0,0, windowWidth, windowHeight);
-	Geometry* p = new Plane(vec3(0,0,0), vec3(1,1,1), vec3(M_PI/4*2, 0, 0));
+	Geometry* p = new Plane(vec3(0,0,0), vec3(1,1,1));
 	objects.push_back(p);
 	GPU.create(vertSource, fragSource, "outColor");
 }
@@ -245,12 +245,42 @@ void onDisplay(){
 }
 
 void onKeyboard(unsigned char key, int pX, int pY){
-
+	if (key == 'w') {
+		camera.wEye = camera.wEye + vec3(0, 1, 0);
+		camera.wLookat = camera.wLookat + vec3(0, 1, 0);
+		glutPostRedisplay();
+	}
+	if (key == 's') {
+		camera.wEye = camera.wEye + vec3(0, -1, 0);
+		camera.wLookat = camera.wLookat + vec3(0, -1, 0);
+		glutPostRedisplay();
+	}
+	if (key == 'a') {
+		camera.wEye = camera.wEye + vec3(-1, 0, 0);
+		camera.wLookat = camera.wLookat + vec3(-1, 0, 0);
+		glutPostRedisplay();
+	}
+	if (key == 'd') {
+		camera.wEye = camera.wEye + vec3(1, 0, 0);
+		camera.wLookat = camera.wLookat + vec3(1, 0, 0);
+		glutPostRedisplay();
+	}
+	if (key == 'q') {
+		camera.wEye = camera.wEye + vec3(0, 0, -1);
+		camera.wLookat = camera.wLookat + vec3(0, 0, -1);
+		glutPostRedisplay();
+	}
+	if (key == 'e') {
+		camera.wEye = camera.wEye + vec3(0, 0, 1);
+		camera.wLookat = camera.wLookat + vec3(0, 0, 1);
+		glutPostRedisplay();
+	}
 }
 
 void onKeyboardUp(unsigned char key, int pX, int pY){}
 
 void onMouseMotion(int pX, int pY){
+
 }
 
 void onMouse(int button, int state, int pX, int pY) {
