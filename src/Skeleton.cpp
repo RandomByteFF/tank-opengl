@@ -121,20 +121,56 @@ class Camera {
 	vec3 GetEye() {
 		return wEye;
 	}
+	void setTarget(vec3 target, vec3 facing) {
+		wLookat = target;
+		facing.z = 0;
+		facing = normalize(-facing);
+		facing = facing * 4.7697; //sqrt(pow(5,2) - pow(1.5, 2))
+		wEye = vec3(facing.x, facing.y, 1.5);
+	}
 };
 Camera camera;
 GPUProgram GPU;
 class Geometry {
 	protected:
 	unsigned int vao, vbo;
+	vec3 scale, rot, pos;
 	public:
+	struct VertexData {
+		vec3 pos, norm;
+		vec2 tex;
+	};
 	Geometry() {
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
 		glGenBuffers(1, &vbo);
 	}
 
-	virtual void Draw() = 0;
+	virtual void Draw() {mat4 M = ScaleMatrix(scale) * 		
+		RotationMatrix(rot.x, vec3(1, 0, 0))*
+		RotationMatrix(rot.y, vec3(0, 1, 0)) *
+		RotationMatrix(rot.z, vec3(0, 0, 1))*
+		TranslateMatrix(pos);
+		mat4 Minv = TranslateMatrix(-pos)*	
+		RotationMatrix(-rot.z, vec3(0, 0, 1))*	
+		RotationMatrix(-rot.y, vec3(0, 1, 0)) *
+		RotationMatrix(-rot.x, vec3(1, 0, 0))*
+		ScaleMatrix(vec3(1,1,1)/scale);
+		mat4 MVP = M*camera.V()*camera.P();
+
+		GPU.setUniform(M, "M");
+		GPU.setUniform(Minv, "Minv");
+		GPU.setUniform(MVP, "MVP");
+		vec3 eye = camera.GetEye();
+		GPU.setUniform(eye, "wEye");
+		GPU.setUniform(vec3(0.4, 0.4, 0.4), "kd");
+		GPU.setUniform(vec3(1, 1, 1), "ks");
+		GPU.setUniform(vec3(0.2, 0.2, 0.2), "ka");
+		GPU.setUniform(5.f, "shine");
+		GPU.setUniform(vec3(1, 1, 1), "La");
+		GPU.setUniform(vec3(1, 1, 1), "Le");
+		//GPU.setUniform(vec3(1, 2, 3), "lDir");
+	}
 	~Geometry() {
 		glDeleteBuffers(1, &vbo);
 		glDeleteVertexArrays(1, &vao);
@@ -142,13 +178,8 @@ class Geometry {
 };
 
 class ParamSurface : public Geometry {
-	unsigned int nVtxStrip, nStrips;
 	protected:
-	vec3 scale, rot, pos;
-	struct VertexData {
-		vec3 pos, norm;
-		vec2 tex;
-	};
+	unsigned int nVtxStrip, nStrips;
 	virtual VertexData GenVertexData(float u, float v) = 0;
 
 	public:
@@ -179,31 +210,7 @@ class ParamSurface : public Geometry {
 	}
 
 	void Draw() {
-		mat4 M = ScaleMatrix(scale) * 		
-		RotationMatrix(rot.x, vec3(1, 0, 0))*
-		RotationMatrix(rot.y, vec3(0, 1, 0)) *
-		RotationMatrix(rot.z, vec3(0, 0, 1))*
-		TranslateMatrix(pos);
-		mat4 Minv = TranslateMatrix(-pos)*	
-		RotationMatrix(-rot.z, vec3(0, 0, 1))*	
-		RotationMatrix(-rot.y, vec3(0, 1, 0)) *
-		RotationMatrix(-rot.x, vec3(1, 0, 0))*
-		ScaleMatrix(vec3(1,1,1)/scale);
-		mat4 MVP = M*camera.V()*camera.P();
-
-		GPU.setUniform(M, "M");
-		GPU.setUniform(Minv, "Minv");
-		GPU.setUniform(MVP, "MVP");
-		vec3 eye = camera.GetEye();
-		GPU.setUniform(eye, "wEye");
-		GPU.setUniform(vec3(0.4, 0.4, 0.4), "kd");
-		GPU.setUniform(vec3(1, 1, 1), "ks");
-		GPU.setUniform(vec3(0.2, 0.2, 0.2), "ka");
-		GPU.setUniform(5.f, "shine");
-		GPU.setUniform(vec3(1, 1, 1), "La");
-		GPU.setUniform(vec3(1, 1, 1), "Le");
-		//GPU.setUniform(vec3(1, 2, 3), "lDir");
-
+		Geometry::Draw();
 		glBindVertexArray(vao);
 		for (size_t i = 0; i < nStrips; i++) {
 			glDrawArrays(GL_TRIANGLE_STRIP, i*nVtxStrip, nVtxStrip);
@@ -238,9 +245,90 @@ class Cylinder : public ParamSurface {
 	VertexData GenVertexData(float u, float v) {
 		VertexData vd;
 		vd.tex = vec2(u,v);
-		vd.pos = vec3(cosf(2*M_PI*u), sinf(2*M_PI*u), v-0.5);
-		vd.norm = vec3(vd.pos.x, vd.pos.y, 0);
+		vd.pos = vec3(cosf(2*M_PI*u)/2, sinf(2*M_PI*u)/2, v);
+		vd.norm = normalize(vec3(vd.pos.x, vd.pos.y, 0));
 		return vd;
+	}
+};
+
+class Triangle : public ParamSurface {
+	public:
+	Triangle(vec3 pos, vec3 scale = vec3(1,1,1), vec3 rot = vec3(0,0,0)) {
+		this->pos = pos;
+		this->scale = scale;
+		this->rot = rot;
+		
+		std::vector<VertexData> d(3);
+		d[0].pos = vec3(0, 0, 0);
+		d[0].norm = vec3(0, 0, 1);
+		d[0].tex = vec2(0.5, 1);
+
+		d[1].pos = vec3(-0.5, -1, 0);
+		d[1].norm = vec3(0,0,1);
+		d[1].tex = vec2(0, 0);
+
+		d[2].pos = vec3(0.5, -1, 0);
+		d[2].norm = vec3(0,0,1);
+		d[2].tex = vec2(1, 0);
+		
+		nVtxStrip = 3;
+		nStrips = 1;
+
+		glBindVertexArray(vao);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, d.size() * sizeof(VertexData), &d[0], GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glEnableVertexAttribArray(2);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, pos));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, norm));
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, tex));
+	}
+	VertexData GenVertexData(float u, float v) {
+		return VertexData();
+	}
+};
+
+class Circle : public Geometry {
+	size_t res;
+	public:
+	Circle(vec3 pos, vec3 scale = vec3(1,1,1), size_t res = 30) {
+		this->pos = pos;
+		this->scale = scale;
+		this->res = res;
+		this->Create(res);
+	}
+	void Create(size_t res) {
+		std::vector<VertexData> vtxData(res+2);
+		vtxData[0].norm = vec3(0,0,1);
+		vtxData[0].pos = vec3(0,0,0);
+		vtxData[0].tex = vec2(0.5, 0.5);
+		for (size_t i = 0; i < res+1; i++) 
+		{
+			vtxData[i+1].norm = vec3(0,0,1);
+			vtxData[i+1].pos = vec3(cosf(2*M_PI/res*i)/2, sinf(2*M_PI/res*i)/2, 0);
+		}
+		
+		
+		glBindVertexArray(vao);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, vtxData.size() * sizeof(VertexData), &vtxData[0], GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glEnableVertexAttribArray(2);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, pos));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, norm));
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, tex));
+	}
+
+	void Draw() {
+		Geometry::Draw();
+		glBindVertexArray(vao);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, res+2);
 	}
 };
 
@@ -248,11 +336,16 @@ class Cylinder : public ParamSurface {
 std::vector<Geometry*> objects;
 void onInitialization(){
 	glViewport(0,0, windowWidth, windowHeight); 
-	objects.push_back(new Plane(vec3(0,0,0), vec3(1,1,1)));
-	objects.push_back(new Cylinder(vec3(0, 0, 0)));
+	//objects.push_back(new Plane(vec3(0,0,0), vec3(100,100,100)));
+	objects.push_back(new Cylinder(vec3(0, 0, 0.3), vec3(1.1, 1.1, 0.8)));
+	objects.push_back(new Cylinder(vec3(0, 0.3, 0.9), vec3(0.2, 0.2, 1.5), vec3(M_PI/2*3, 0, 0)));
+	objects.push_back(new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.28, 1), vec3(0.6747, 0, 0)));
+	objects.push_back(new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.28, 1), vec3(0.6747, 0, M_PI)));
+	objects.push_back(new Circle(vec3(0,0,1.1), vec3(1.1, 1.1, 1)));
 	GPU.create(vertSource, fragSource, "outColor");
 	glEnable(GL_DEPTH_TEST);
-	// glDisable(GL_CULL_FACE);
+	glDisable(GL_CULL_FACE);
+	camera.setTarget(vec3(0,0,1.1), vec3(0, 1, 0));
 }
 
 void onDisplay(){
