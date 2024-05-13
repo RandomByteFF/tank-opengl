@@ -52,7 +52,7 @@ const char* vertSource = R"(
 	void main() {
 		gl_Position = vec4(vtxPos, 1) * MVP; // to NDC
 		vec4 wPos = vec4(vtxPos, 1) * M;
-		wLight = vec3(1, 2, 3);
+		wLight = vec3(0, -1, 0);
 		wView = wEye - wPos.xyz/wPos.w;
 		wNormal = (Minv * vec4(vtxNorm, 0)).xyz;
 	}
@@ -197,9 +197,9 @@ class ParamSurface : public Geometry {
 		GPU.setUniform(eye, "wEye");
 		GPU.setUniform(vec3(0.4, 0.4, 0.4), "kd");
 		GPU.setUniform(vec3(1, 1, 1), "ks");
-		GPU.setUniform(vec3(0.2, 0.2, 0.2), "ka");
+		GPU.setUniform(vec3(1, 1, 1), "ka");
 		GPU.setUniform(5, "shine");
-		GPU.setUniform(vec3(0.2, 0.2, 0.2), "La");
+		GPU.setUniform(vec3(1, 1, 1), "La");
 		GPU.setUniform(vec3(1, 1, 1), "Le");
 		//GPU.setUniform(vec3(1, 2, 3), "lDir");
 
@@ -226,17 +226,36 @@ class Plane : public ParamSurface {
 		return vd;
 	}
 };
+class Cylinder : public ParamSurface {
+	public:
+	Cylinder(vec3 pos, vec3 scale = vec3(1,1,1), vec3 rot = vec3(0,0,0)) {
+		this->pos = pos;
+		this->scale = scale;
+		this->rot = rot;
+		this->Create(2, 30);
+	}
+	VertexData GenVertexData(float u, float v) {
+		VertexData vd;
+		vd.tex = vec2(u,v);
+		vd.pos = vec3(cosf(2*M_PI*u), sinf(2*M_PI*u), v-0.5);
+		vd.norm = vec3(vd.pos.x, vd.pos.y, 0);
+		return vd;
+	}
+};
 
 
 std::vector<Geometry*> objects;
 void onInitialization(){
-	glViewport(0,0, windowWidth, windowHeight);
-	Geometry* p = new Plane(vec3(0,0,0), vec3(1,1,1));
-	objects.push_back(p);
+	glViewport(0,0, windowWidth, windowHeight); 
+	//objects.push_back(new Plane(vec3(0,0,0), vec3(1,1,1)));
+	objects.push_back(new Cylinder(vec3(1, 0, 0)));
 	GPU.create(vertSource, fragSource, "outColor");
+	// glEnable(GL_DEPTH_TEST);
+	// glDisable(GL_CULL_FACE);
 }
 
 void onDisplay(){
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClear(GL_COLOR_BUFFER_BIT);
 	for(Geometry* g : objects) {
 		g->Draw();
