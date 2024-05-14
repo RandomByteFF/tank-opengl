@@ -145,9 +145,9 @@ GPUProgram GPU;
 GPUProgram groundShader;
 
 class Camera {
-	public:
 	vec3 wEye, wLookat, wVup;
 	float fov, asp, fp, bp;
+	public:
 	Camera() {
 		fov = M_PI/4;
 		asp = 1;
@@ -181,18 +181,20 @@ class Camera {
 	void setTarget(vec3 target, vec3 facing) {
 		wLookat = target;
 		facing.z = 0;
-		facing = normalize(-facing);
-		facing = facing * 4.7697; //sqrt(pow(5,2) - pow(1.5, 2))
-		wEye = vec3(facing.x, facing.y, 1.5);
+		facing = normalize(-facing)*6.2;
+		wEye = vec3(target.x + facing.x, target.y + facing.y, 1.5);
+		//wEye = vec3(0, 0, 5);
 		GPU.setUniform(wEye, "wEye");
+		groundShader.setUniform(wEye, "wEye");
 	}
 };
 Camera camera;
 class Geometry {
 	protected:
-	unsigned int vao, vbo;
 	vec3 scale, rot, pos;
+	unsigned int vao, vbo;
 	public:
+	vec3 offset, rOffset;
 	struct VertexData {
 		vec3 pos, norm;
 		vec2 tex;
@@ -206,22 +208,20 @@ class Geometry {
 	virtual void Draw() {
 		GPU.Use();
 		mat4 M = ScaleMatrix(scale) * 		
-		RotationMatrix(rot.x, vec3(1, 0, 0))*
-		RotationMatrix(rot.y, vec3(0, 1, 0)) *
-		RotationMatrix(rot.z, vec3(0, 0, 1))*
-		TranslateMatrix(pos);
-		mat4 Minv = TranslateMatrix(-pos)*	
-		RotationMatrix(-rot.z, vec3(0, 0, 1))*	
-		RotationMatrix(-rot.y, vec3(0, 1, 0)) *
-		RotationMatrix(-rot.x, vec3(1, 0, 0))*
+		RotationMatrix(rot.x + rOffset.x, vec3(1, 0, 0))*
+		RotationMatrix(rot.y + rOffset.y, vec3(0, 1, 0)) *
+		RotationMatrix(rot.z + rOffset.z, vec3(0, 0, 1))*
+		TranslateMatrix(pos + offset);
+		mat4 Minv = TranslateMatrix(-(pos+offset))*	
+		RotationMatrix(-(rot.z + rOffset.z), vec3(0, 0, 1))*	
+		RotationMatrix(-(rot.y + rOffset.y), vec3(0, 1, 0)) *
+		RotationMatrix(-(rot.x + rOffset.x), vec3(1, 0, 0))*
 		ScaleMatrix(vec3(1,1,1)/scale);
 		mat4 MVP = M*camera.V()*camera.P();
 
 		GPU.setUniform(M, "M");
 		GPU.setUniform(Minv, "Minv");
 		GPU.setUniform(MVP, "MVP");
-		vec3 eye = camera.GetEye();
-		GPU.setUniform(eye, "wEye");
 		GPU.setUniform(vec3(0.4, 0.4, 0.4), "kd");
 		GPU.setUniform(vec3(1, 1, 1), "ks");
 		GPU.setUniform(vec3(0.2, 0.2, 0.2), "ka");
@@ -230,7 +230,7 @@ class Geometry {
 		GPU.setUniform(vec3(1, 1, 1), "Le");
 		//GPU.setUniform(vec3(1, 2, 3), "lDir");
 	}
-	~Geometry() {
+	virtual ~Geometry() {
 		glDeleteBuffers(1, &vbo);
 		glDeleteVertexArrays(1, &vao);
 	}
@@ -437,7 +437,7 @@ class Ground : public Plane {
 	Texture t;
 	std::vector<vec4> texture;
 	public:
-	Ground() : Plane(vec3(0,0,0), vec3(1000, 1000, 1)){
+	Ground() : Plane(vec3(0,0,-0.001), vec3(1000, 1000, 1)){
 		texture = std::vector<vec4>(100*100);
 		for (size_t i = 0; i < 100*100; i++)
 		{
@@ -460,41 +460,121 @@ class Ground : public Plane {
 		ScaleMatrix(vec3(1,1,1)/scale);
 		mat4 MVP = M*camera.V()*camera.P();
 
-		GPU.setUniform(M, "M");
-		GPU.setUniform(Minv, "Minv");
-		GPU.setUniform(MVP, "MVP");
-		vec3 eye = camera.GetEye();
-		GPU.setUniform(eye, "wEye");
-		GPU.setUniform(vec3(0.1, 0.1, 0.1), "ks");
-		GPU.setUniform(vec3(0.2, 0.2, 0.2), "ka");
-		GPU.setUniform(100.f, "shine");
-		GPU.setUniform(vec3(1, 1, 1), "La");
-		GPU.setUniform(vec3(1, 1, 1), "Le");
-		//GPU.setUniform(vec3(1, 2, 3), "lDir");
+		groundShader.setUniform(M, "M");
+		groundShader.setUniform(Minv, "Minv");
+		groundShader.setUniform(MVP, "MVP");
+		groundShader.setUniform(vec3(0.1, 0.1, 0.1), "ks");
+		groundShader.setUniform(vec3(0.2, 0.2, 0.2), "ka");
+		groundShader.setUniform(100.f, "shine");
+		groundShader.setUniform(vec3(1, 1, 1), "La");
+		groundShader.setUniform(vec3(1, 1, 1), "Le");
+		
 		for (size_t i = 0; i < nStrips; i++) {
 			glDrawArrays(GL_TRIANGLE_STRIP, i*nVtxStrip, nVtxStrip);
 		}
 	}
 };
 
+class Tank {
+	vec3 pos;
+	vec3 facing = vec3(0, 1, 0);
+	float rot;
+	float sRight;
+	float sLeft;
+
+	Cylinder* base;
+	Cylinder* canon;
+	Triangle* backPlate;
+	Triangle* frontPlate;
+	Circle* topPlate;
+	std::vector<Track*> rightTracks;
+	std::vector<Track*> leftTracks;
+	public:
+	void Init() {
+		base = new Cylinder(vec3(0, 0, 0.3), vec3(1.1, 1.1, 0.8));
+		canon = new Cylinder(vec3(0, 0, 0.9), vec3(0.2, 0.2, 1.5), vec3(M_PI/2*3, 0, 0));
+		backPlate = new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.28, 1), vec3(0.6747, 0, 0));
+		frontPlate = new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.28, 1), vec3(0.6747, 0, M_PI));
+		topPlate = new Circle(vec3(0, 0, 1.1), vec3(1.1, 1.1, 1));
+		for (size_t i = 0; i < 36; i++)
+		{
+			rightTracks.push_back(new Track(true, i));
+		}
+		for (size_t i = 0; i < 36; i++)
+		{
+			leftTracks.push_back(new Track(false, i));
+		}
+	}
+
+	void Move(vec3 pos) {
+		this->pos = pos;
+		base->offset = pos;
+		canon->offset = pos;
+		backPlate->offset = pos;
+		frontPlate->offset = pos;
+		topPlate->offset = pos;
+		for (Track* t : rightTracks) {
+			t->Animate(facing, pos, sRight);
+		}
+		for (Track* t : leftTracks) {
+			t->Animate(facing, pos, sLeft);
+		}
+		camera.setTarget(pos + vec3(0, 0, 1.2), facing);
+	}
+
+	void Move(float angle) {
+		rot = angle;
+		facing = normalize(vec3(sinf(-angle), cosf(-angle), 0));
+		base->rOffset = vec3(0, 0, angle);
+		canon->rOffset = vec3(0, 0, angle);
+		canon->offset = vec3(pos.x + 0.3*sinf(-angle), pos.y + 0.3*cosf(-angle), 0);
+		backPlate->rOffset = vec3(0, 0, angle);
+		frontPlate->rOffset = vec3(0, 0, angle);
+		topPlate->rOffset = vec3(0, 0, angle);
+		camera.setTarget(pos + vec3(0, 0, 1.2), facing);
+	}
+
+	void MoveY(float pos) {
+		Move(this->pos + facing*pos);
+	}
+	void Rotate(float rot) {
+		Move(this->rot + rot);
+	}
+
+	void Draw() {
+		base->Draw();
+		canon->Draw();
+		backPlate->Draw();
+		frontPlate->Draw();
+		topPlate->Draw();
+		for (Track* t : rightTracks) {
+			t->Draw();
+		}
+		for (Track* t : leftTracks) {
+			t->Draw();
+		}
+	}
+	~Tank() {
+		delete base;
+		delete canon;
+		delete backPlate;
+		delete frontPlate;
+		delete topPlate;
+		for (Track* t : rightTracks) {
+			delete t;
+		}
+		for (Track* t : leftTracks) {
+			delete t;
+		}
+	}
+};
 
 std::vector<Geometry*> objects;
+Tank tank;
 void onInitialization(){
 	glViewport(0,0, windowWidth, windowHeight); 
 	objects.push_back(new Ground());
-	objects.push_back(new Cylinder(vec3(0, 0, 0.3), vec3(1.1, 1.1, 0.8)));
-	objects.push_back(new Cylinder(vec3(0, 0.3, 0.9), vec3(0.2, 0.2, 1.5), vec3(M_PI/2*3, 0, 0)));
-	objects.push_back(new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.28, 1), vec3(0.6747, 0, 0)));
-	objects.push_back(new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.28, 1), vec3(0.6747, 0, M_PI)));
-	objects.push_back(new Circle(vec3(0,0,1.1), vec3(1.1, 1.1, 1)));
-	for (size_t i = 0; i < 36; i++)
-	{
-		objects.push_back(new Track(true, i));
-	}
-	for (size_t i = 0; i < 36; i++)
-	{
-		objects.push_back(new Track(false, i));
-	}
+	tank.Init();
 	
 	GPU.create(vertSource, fragSource, "outColor");
 	groundShader.create(gVertSource, gFragSource, "outColor");
@@ -509,40 +589,39 @@ void onDisplay(){
 	for(Geometry* g : objects) {
 		g->Draw();
 	}
+	tank.Draw();
 	glutSwapBuffers();
 }
 
 void onKeyboard(unsigned char key, int pX, int pY){
 	if (key == 'w') {
-		camera.wEye = camera.wEye + vec3(0, 1, 0);
-		camera.wLookat = camera.wLookat + vec3(0, 1, 0);
+		tank.MoveY(1);
 		glutPostRedisplay();
 	}
-	if (key == 's') {
-		camera.wEye = camera.wEye + vec3(0, -1, 0);
-		camera.wLookat = camera.wLookat + vec3(0, -1, 0);
-		glutPostRedisplay();
-	}
+	// if (key == 's') {
+	// 	camera.wEye = camera.wEye + vec3(0, -1, 0);
+	// 	camera.wLookat = camera.wLookat + vec3(0, -1, 0);
+	// 	glutPostRedisplay();
+	// }
 	if (key == 'a') {
-		camera.wEye = camera.wEye + vec3(-1, 0, 0);
-		camera.wLookat = camera.wLookat + vec3(-1, 0, 0);
+		tank.Rotate(M_PI/36);
 		glutPostRedisplay();
 	}
-	if (key == 'd') {
-		camera.wEye = camera.wEye + vec3(1, 0, 0);
-		camera.wLookat = camera.wLookat + vec3(1, 0, 0);
-		glutPostRedisplay();
-	}
-	if (key == 'q') {
-		camera.wEye = camera.wEye + vec3(0, 0, -1);
-		camera.wLookat = camera.wLookat + vec3(0, 0, -1);
-		glutPostRedisplay();
-	}
-	if (key == 'e') {
-		camera.wEye = camera.wEye + vec3(0, 0, 1);
-		camera.wLookat = camera.wLookat + vec3(0, 0, 1);
-		glutPostRedisplay();
-	}
+	// if (key == 'd') {
+	// 	camera.wEye = camera.wEye + vec3(1, 0, 0);
+	// 	camera.wLookat = camera.wLookat + vec3(1, 0, 0);
+	// 	glutPostRedisplay();
+	// }
+	// if (key == 'q') {
+	// 	camera.wEye = camera.wEye + vec3(0, 0, -1);
+	// 	camera.wLookat = camera.wLookat + vec3(0, 0, -1);
+	// 	glutPostRedisplay();
+	// }
+	// if (key == 'e') {
+	// 	camera.wEye = camera.wEye + vec3(0, 0, 1);
+	// 	camera.wLookat = camera.wLookat + vec3(0, 0, 1);
+	// 	glutPostRedisplay();
+	// }
 }
 
 void onKeyboardUp(unsigned char key, int pX, int pY){}
