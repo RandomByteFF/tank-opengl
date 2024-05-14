@@ -83,9 +83,66 @@ const char* fragSource = R"(
 	}
 )";
 
+const char* gVertSource = R"(
+	#version 330
+	precision highp float;
+
+	uniform mat4 M, Minv, MVP;
+	uniform vec3 wEye;
+	uniform vec3 lDir;
+
+	layout(location = 0) in vec3 vtxPos; // pos in model sp
+	layout(location = 1) in vec3 vtxNorm;// normal in model sp
+	layout(location = 2) in vec2 textPos;
+
+	out vec3 wNormal;
+	out vec3 wView;
+	out vec3 wLight;
+	out vec2 uv;
+
+	void main() {
+		gl_Position = vec4(vtxPos, 1) * MVP; // to NDC
+		vec4 wPos = vec4(vtxPos, 1) * M;
+		wLight = vec3(1, 2, 3);
+		wView = wEye - wPos.xyz/wPos.w;
+		wNormal = (Minv * vec4(vtxNorm, 0)).xyz;
+
+	}
+)";
+
+const char* gFragSource = R"(
+	#version 330
+	precision highp float;
+
+	uniform vec3 kd, ks, ka;
+	uniform float shine;
+	uniform vec3 La, Le;
+
+	uniform sampler2D text;
+
+	in vec2 uv;
+	in vec3 wNormal;
+	in vec3 wView;
+	in vec3 wLight;
+	out vec4 outColor;
+
+	void main() {
+		vec3 N = normalize(wNormal);
+		vec3 V = normalize(wView);
+		vec3 L = normalize(wLight);
+		vec3 H = normalize(L + V);
+		float cost = max(dot(N, L), 0);
+		float cosd = max(dot(N, H), 0);
+		vec3 color = ka * La + (kd * cost + ks * pow(cosd, shine)) * Le;
+		outColor = vec4(color, 1);
+	}
+)";
+
 vec3 operator / (vec3 a, vec3 b) {
 	return vec3((float)a.x / b.x, (float)a.y / b.y, (float)a.z / b.z);
 }
+GPUProgram GPU;
+GPUProgram groundShader;
 
 class Camera {
 	public:
@@ -127,10 +184,10 @@ class Camera {
 		facing = normalize(-facing);
 		facing = facing * 4.7697; //sqrt(pow(5,2) - pow(1.5, 2))
 		wEye = vec3(facing.x, facing.y, 1.5);
+		GPU.setUniform(wEye, "wEye");
 	}
 };
 Camera camera;
-GPUProgram GPU;
 class Geometry {
 	protected:
 	unsigned int vao, vbo;
@@ -332,6 +389,48 @@ class Circle : public Geometry {
 	}
 };
 
+class Track : public Plane {
+	bool right = true;
+	size_t num;
+	public:
+
+	Track(bool right, size_t num) : Plane(vec3(0,0,0), vec3(0.4, 0.1, 1)){
+		this->right = right;
+		this->num = num;
+		Animate(vec3(0, 1, 0), vec3(0,0,0), 0);
+	}
+
+	void Animate(vec3 facing, vec3 tPos, float t) {
+		//0-1.8
+		//1.8-2.7
+		//2.7-4.5
+		//4.5-5.4
+		t += num*0.15;
+		float n = fmod(t, 5.4);
+		vec3 d;
+		if (n < 1.8) {
+			rot = vec3(0,0,0);
+			d = vec3(0, t, 0);
+		}
+		else if (n < 2.7) {
+			float dl = n - 1.8;
+			rot = vec3(-dl/0.3, 0, 0);
+			d = vec3(0, 1.8 + 0.3* sinf(dl/0.3), -0.3*(1-cosf(dl/0.3)));
+		}
+		else if (n < 4.5) {
+			rot = vec3(M_PI, 0, 0);
+			d = vec3(0, 4.5-t, -0.6);
+		}
+		else {
+			float dl = 5.4-n;
+			rot = vec3(dl/0.3, 0, 0);
+			d = vec3(0, - 0.3* sinf(dl/0.3), -0.3*(1-cosf(dl/0.3)));
+		}
+		pos = tPos + d;
+		pos = pos + vec3((right ?  1: -1)*0.75, -0.9, 0.6);
+	}
+};
+
 
 std::vector<Geometry*> objects;
 void onInitialization(){
@@ -342,6 +441,15 @@ void onInitialization(){
 	objects.push_back(new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.28, 1), vec3(0.6747, 0, 0)));
 	objects.push_back(new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.28, 1), vec3(0.6747, 0, M_PI)));
 	objects.push_back(new Circle(vec3(0,0,1.1), vec3(1.1, 1.1, 1)));
+	for (size_t i = 0; i < 36; i++)
+	{
+		objects.push_back(new Track(true, i));
+	}
+	for (size_t i = 0; i < 36; i++)
+	{
+		objects.push_back(new Track(false, i));
+	}
+	
 	GPU.create(vertSource, fragSource, "outColor");
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
