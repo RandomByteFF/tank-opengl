@@ -106,7 +106,7 @@ const char* gVertSource = R"(
 		wLight = vec3(1, 2, 3);
 		wView = wEye - wPos.xyz/wPos.w;
 		wNormal = (Minv * vec4(vtxNorm, 0)).xyz;
-
+		uv = textPos;
 	}
 )";
 
@@ -114,7 +114,7 @@ const char* gFragSource = R"(
 	#version 330
 	precision highp float;
 
-	uniform vec3 kd, ks, ka;
+	uniform vec3 ks, ka;
 	uniform float shine;
 	uniform vec3 La, Le;
 
@@ -133,7 +133,7 @@ const char* gFragSource = R"(
 		vec3 H = normalize(L + V);
 		float cost = max(dot(N, L), 0);
 		float cosd = max(dot(N, H), 0);
-		vec3 color = ka * La + (kd * cost + ks * pow(cosd, shine)) * Le;
+		vec3 color = ka * La + (texture(text, uv).xyz * cost + ks * pow(cosd, shine)) * Le;
 		outColor = vec4(color, 1);
 	}
 )";
@@ -203,7 +203,9 @@ class Geometry {
 		glGenBuffers(1, &vbo);
 	}
 
-	virtual void Draw() {mat4 M = ScaleMatrix(scale) * 		
+	virtual void Draw() {
+		GPU.Use();
+		mat4 M = ScaleMatrix(scale) * 		
 		RotationMatrix(rot.x, vec3(1, 0, 0))*
 		RotationMatrix(rot.y, vec3(0, 1, 0)) *
 		RotationMatrix(rot.z, vec3(0, 0, 1))*
@@ -431,11 +433,55 @@ class Track : public Plane {
 	}
 };
 
+class Ground : public Plane {
+	Texture t;
+	std::vector<vec4> texture;
+	public:
+	Ground() : Plane(vec3(0,0,0), vec3(1000, 1000, 1)){
+		texture = std::vector<vec4>(100*100);
+		for (size_t i = 0; i < 100*100; i++)
+		{
+			texture[i] = vec4((float)rand()/RAND_MAX/4, (float)rand()/RAND_MAX/2, (float)rand()/RAND_MAX/5, 1);
+		}
+		
+		t.create(100, 100, texture, GL_LINEAR);
+	}
+	void Draw() {
+		groundShader.Use();
+		mat4 M = ScaleMatrix(scale) *
+		RotationMatrix(rot.x, vec3(1, 0, 0))*
+		RotationMatrix(rot.y, vec3(0, 1, 0)) *
+		RotationMatrix(rot.z, vec3(0, 0, 1))*
+		TranslateMatrix(pos);
+		mat4 Minv = TranslateMatrix(-pos)*	
+		RotationMatrix(-rot.z, vec3(0, 0, 1))*	
+		RotationMatrix(-rot.y, vec3(0, 1, 0)) *
+		RotationMatrix(-rot.x, vec3(1, 0, 0))*
+		ScaleMatrix(vec3(1,1,1)/scale);
+		mat4 MVP = M*camera.V()*camera.P();
+
+		GPU.setUniform(M, "M");
+		GPU.setUniform(Minv, "Minv");
+		GPU.setUniform(MVP, "MVP");
+		vec3 eye = camera.GetEye();
+		GPU.setUniform(eye, "wEye");
+		GPU.setUniform(vec3(0.1, 0.1, 0.1), "ks");
+		GPU.setUniform(vec3(0.2, 0.2, 0.2), "ka");
+		GPU.setUniform(100.f, "shine");
+		GPU.setUniform(vec3(1, 1, 1), "La");
+		GPU.setUniform(vec3(1, 1, 1), "Le");
+		//GPU.setUniform(vec3(1, 2, 3), "lDir");
+		for (size_t i = 0; i < nStrips; i++) {
+			glDrawArrays(GL_TRIANGLE_STRIP, i*nVtxStrip, nVtxStrip);
+		}
+	}
+};
+
 
 std::vector<Geometry*> objects;
 void onInitialization(){
 	glViewport(0,0, windowWidth, windowHeight); 
-	//objects.push_back(new Plane(vec3(0,0,0), vec3(100,100,100)));
+	objects.push_back(new Ground());
 	objects.push_back(new Cylinder(vec3(0, 0, 0.3), vec3(1.1, 1.1, 0.8)));
 	objects.push_back(new Cylinder(vec3(0, 0.3, 0.9), vec3(0.2, 0.2, 1.5), vec3(M_PI/2*3, 0, 0)));
 	objects.push_back(new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.28, 1), vec3(0.6747, 0, 0)));
@@ -451,6 +497,7 @@ void onInitialization(){
 	}
 	
 	GPU.create(vertSource, fragSource, "outColor");
+	groundShader.create(gVertSource, gFragSource, "outColor");
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	camera.setTarget(vec3(0,0,1.1), vec3(0, 1, 0));
