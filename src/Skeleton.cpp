@@ -549,6 +549,10 @@ class Tank {
 	}
 	void Rotate(float rot) {
 		Move(this->rot + rot);
+		vec3 c = pos + normalize(vec3(-facing.y, facing.x, 0)) * 0.75;
+		vec3 p_ = pos - c;
+		vec4 p = vec4(p_.x, p_.y, p_.z, 1) * RotationMatrix(rot, vec3(0, 0, 1));
+		Move(vec3(p.x, p.y, p.z) + c);
 	}
 
 	void Draw() {
