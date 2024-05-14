@@ -402,7 +402,7 @@ class Track : public Plane {
 		Animate(vec3(0, 1, 0), vec3(0,0,0), 0);
 	}
 
-	void Animate(vec3 facing, vec3 tPos, float t) {
+	void Animate(vec3 facing, vec3 tPos, float t, float angle = 0) {
 		//0-1.8
 		//1.8-2.7
 		//2.7-4.5
@@ -428,8 +428,12 @@ class Track : public Plane {
 			rot = vec3(dl/0.3, 0, 0);
 			d = vec3(0, - 0.3* sinf(dl/0.3), -0.3*(1-cosf(dl/0.3)));
 		}
-		pos = tPos + d;
-		pos = pos + vec3((right ?  1: -1)*0.75, -0.9, 0.6);
+
+		vec3 toRot = d + vec3((right ?  1: -1)*0.75, -0.9, 0.6);
+		vec4 r = vec4(toRot.x, toRot.y, toRot.z, 1) * RotationMatrix(angle, vec3(0,0,1));
+		pos = vec3(r.x, r.y, r.z) + tPos;
+
+		rot = rot + vec3(0, 0, angle);
 	}
 };
 
@@ -493,8 +497,8 @@ class Tank {
 	void Init() {
 		base = new Cylinder(vec3(0, 0, 0.3), vec3(1.1, 1.1, 0.8));
 		canon = new Cylinder(vec3(0, 0, 0.9), vec3(0.2, 0.2, 1.5), vec3(M_PI/2*3, 0, 0));
-		backPlate = new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.28, 1), vec3(0.6747, 0, 0));
-		frontPlate = new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.28, 1), vec3(0.6747, 0, M_PI));
+		backPlate = new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.4422, 1), vec3(0.588, 0, 0));
+		frontPlate = new Triangle(vec3(0, 0, 1.1), vec3(1.5, 1.4422, 1), vec3(0.588, 0, M_PI));
 		topPlate = new Circle(vec3(0, 0, 1.1), vec3(1.1, 1.1, 1));
 		for (size_t i = 0; i < 36; i++)
 		{
@@ -514,10 +518,10 @@ class Tank {
 		frontPlate->offset = pos;
 		topPlate->offset = pos;
 		for (Track* t : rightTracks) {
-			t->Animate(facing, pos, sRight);
+			t->Animate(facing, pos, sRight, rot);
 		}
 		for (Track* t : leftTracks) {
-			t->Animate(facing, pos, sLeft);
+			t->Animate(facing, pos, sLeft, rot);
 		}
 		camera.setTarget(pos + vec3(0, 0, 1.2), facing);
 	}
@@ -531,6 +535,12 @@ class Tank {
 		backPlate->rOffset = vec3(0, 0, angle);
 		frontPlate->rOffset = vec3(0, 0, angle);
 		topPlate->rOffset = vec3(0, 0, angle);
+		for (Track* t : rightTracks) {
+			t->Animate(facing, pos, sRight, angle);
+		}
+		for (Track* t : leftTracks) {
+			t->Animate(facing, pos, sLeft, angle);
+		}
 		camera.setTarget(pos + vec3(0, 0, 1.2), facing);
 	}
 
