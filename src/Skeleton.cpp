@@ -185,8 +185,9 @@ class Camera {
 		facing.z = 0;
 		facing = normalize(-facing)*6.2;
 		wEye = vec3(target.x + facing.x, target.y + facing.y, 1.5);
-		//wEye = vec3(0, 0, 5);
+		GPU.Use();
 		GPU.setUniform(wEye, "wEye");
+		groundShader.Use();
 		groundShader.setUniform(wEye, "wEye");
 	}
 };
@@ -315,6 +316,7 @@ class Cylinder : public ParamSurface {
 class Triangle : public ParamSurface {
 	public:
 	Triangle(vec3 pos, vec3 scale = vec3(1,1,1), vec3 rot = vec3(0,0,0)) {
+		GPU.Use();
 		this->pos = pos;
 		this->scale = scale;
 		this->rot = rot;
@@ -362,6 +364,7 @@ class Circle : public Geometry {
 		this->Create(res);
 	}
 	void Create(size_t res) {
+		GPU.Use();
 		std::vector<VertexData> vtxData(res+2);
 		vtxData[0].norm = vec3(0,0,1);
 		vtxData[0].pos = vec3(0,0,0);
@@ -445,6 +448,7 @@ class Ground : public Plane {
 	std::vector<vec4> texture;
 	public:
 	Ground() : Plane(vec3(0,0,-0.001), vec3(1000, 1000, 1)){
+		groundShader.Use();
 		texture = std::vector<vec4>(100*100);
 		for (size_t i = 0; i < 100*100; i++)
 		{
@@ -452,6 +456,7 @@ class Ground : public Plane {
 		}
 		
 		t.create(100, 100, texture, GL_LINEAR);
+		GPU.Use();
 	}
 	void Draw() {
 		groundShader.Use();
@@ -479,6 +484,7 @@ class Ground : public Plane {
 		for (size_t i = 0; i < nStrips; i++) {
 			glDrawArrays(GL_TRIANGLE_STRIP, i*nVtxStrip, nVtxStrip);
 		}
+		GPU.Use();
 	}
 };
 
@@ -535,7 +541,6 @@ class Tank {
 		for (Track* t : leftTracks) {
 			t->Animate(facing, pos, animLeft, rot);
 		}
-		camera.setTarget(pos + vec3(0, 0, 1.2), facing);
 	}
 
 	void Move(float angle) {
@@ -579,6 +584,7 @@ class Tank {
 		else {
 			MoveY((abs(sRight) < abs(sLeft) ? sRight : sLeft) * deltaTime);
 		}
+		camera.setTarget(pos + vec3(0, 0, 1.2), facing);
 	}
 
 	void Draw() {
@@ -626,21 +632,23 @@ class Tank {
 std::vector<Geometry*> objects;
 Tank tank;
 void onInitialization(){
+	glClearColor(0.5f, 0.5f, 0.8f, 1.0f);
 	glViewport(0,0, windowWidth, windowHeight); 
 	objects.push_back(new Ground());
-	tank.Init();
 	
 	GPU.create(vertSource, fragSource, "outColor");
 	groundShader.create(gVertSource, gFragSource, "outColor");
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
-	camera.setTarget(vec3(0,0,1.1), vec3(0, 1, 0));
+	tank.Init();
+	tank.RotateRight(M_PI/2);
+	tank.Move(vec3(0, 0, 0));
 	lastFrame = glutGet(GLUT_ELAPSED_TIME) / 1000;
 }
 
 void onDisplay(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
 	for(Geometry* g : objects) {
 		g->Draw();
 	}
@@ -673,6 +681,9 @@ void onKeyboard(unsigned char key, int pX, int pY){
 	if (key == 's') {
 		tank.liftCanon(-M_PI/36);
 	}
+	// if (key == 'a') {
+	// 	tank.MoveY(1);
+	// }
 }
 
 void onKeyboardUp(unsigned char key, int pX, int pY){}
