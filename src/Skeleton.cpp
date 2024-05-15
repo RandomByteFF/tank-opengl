@@ -146,6 +146,11 @@ GPUProgram groundShader;
 float deltaTime = 0;
 float lastFrame = 0;
 
+class Drawable {
+	public:
+	virtual void Draw() = 0;
+};
+
 class Camera {
 	vec3 wEye, wLookat, wVup;
 	float fov, asp, fp, bp;
@@ -157,7 +162,7 @@ class Camera {
 		wLookat = vec3(0,0,0);
 		wVup = vec3(0, 0, 1);
 		fp = 0.1;
-		bp = 30;
+		bp = 50;
 	}
 
 	mat4 V() {
@@ -192,7 +197,7 @@ class Camera {
 	}
 };
 Camera camera;
-class Geometry {
+class Geometry : public Drawable{
 	protected:
 	vec3 scale, rot, pos;
 	unsigned int vao, vbo;
@@ -506,6 +511,10 @@ class Tank {
 	Circle* topPlate;
 	std::vector<Track*> rightTracks;
 	std::vector<Track*> leftTracks;
+
+	bool feq(float a, float b) {
+		return abs(a-b) < 0.0001;
+	}
 	public:
 	void Init() {
 		base = new Cylinder(vec3(0, 0, 0.3), vec3(1.1, 1.1, 0.8));
@@ -568,14 +577,17 @@ class Tank {
 		Move(this->rot - rot);
 		vec3 c = pos + normalize(vec3(facing.y, -facing.x, 0)) * 0.75;
 		vec3 p_ = pos - c;
-		vec4 p = vec4(p_.x, p_.y, p_.z, 1) * RotationMatrix(rot, vec3(0, 0, 1));
+		vec4 p = vec4(p_.x, p_.y, p_.z, 1) * RotationMatrix(-rot, vec3(0, 0, 1));
 		Move(vec3(p.x, p.y, p.z) + c);
 	}
 
 	void Animate() {
 		RotateLeft(1.5*sRight * deltaTime);
 		RotateRight(1.5*sLeft * deltaTime);
-		if (sRight >= 0 && sLeft >= 0) {
+		if (feq(sRight+sLeft, 0)) {
+			MoveY(0);
+		}
+		else if (sRight > 0 && sLeft > 0) {
 			MoveY((sRight < sLeft ? sRight : sLeft) * deltaTime);
 		}
 		else if (sRight < 0 && sLeft < 0) {
@@ -629,17 +641,36 @@ class Tank {
 	}
 };
 
-std::vector<Geometry*> objects;
+class Pyramid : public Drawable {
+	std::vector<Triangle*> triangles;
+	public:
+	Pyramid(vec3 pos, vec3 scale = vec3(1,1,1), float rot = 0) {
+		triangles.push_back(new Triangle(pos, scale, vec3(M_PI/3, 0, rot)));
+		triangles.push_back(new Triangle(pos, scale, vec3(M_PI/3, 0, rot + M_PI/2)));
+		triangles.push_back(new Triangle(pos, scale, vec3(M_PI/3, 0, rot + M_PI/2*2)));
+		triangles.push_back(new Triangle(pos, scale, vec3(M_PI/3, 0, rot + M_PI/2*3)));
+	}
+	void Draw() {
+		for (Triangle* t : triangles) {
+			t->Draw();
+		}
+	}
+};
+
+std::vector<Drawable*> objects;
 Tank tank;
 void onInitialization(){
 	glClearColor(0.5f, 0.5f, 0.8f, 1.0f);
 	glViewport(0,0, windowWidth, windowHeight); 
-	objects.push_back(new Ground());
 	
 	GPU.create(vertSource, fragSource, "outColor");
 	groundShader.create(gVertSource, gFragSource, "outColor");
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	objects.push_back(new Ground());
+	objects.push_back(new Pyramid(vec3(40, 0, 6), vec3(7, 7, 7), 10));
+	objects.push_back(new Pyramid(vec3(35, 20, 5), vec3(6, 6, 6), 30));
+	objects.push_back(new Pyramid(vec3(35, -5, 3), vec3(4, 4, 4), 5));
 	tank.Init();
 	tank.RotateRight(M_PI/2);
 	tank.Move(vec3(0, 0, 0));
@@ -649,7 +680,7 @@ void onInitialization(){
 void onDisplay(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClear(GL_COLOR_BUFFER_BIT);
-	for(Geometry* g : objects) {
+	for(Drawable* g : objects) {
 		g->Draw();
 	}
 	tank.Draw();
