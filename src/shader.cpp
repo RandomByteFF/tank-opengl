@@ -1,6 +1,6 @@
 #include "shader.h"
 
-GPUProgram Shader::create(const std::string vertFile, const std::string fragFile, std::string output) {
+void Shader::createShader(const std::string vertFile, const std::string fragFile, std::string output) {
     std::string vertSource;
     std::string fragSource;
 
@@ -19,11 +19,11 @@ GPUProgram Shader::create(const std::string vertFile, const std::string fragFile
         vertReader.close();
         printf(vertSource.c_str());
         fragReader.close();
+        printf(fragSource.c_str());
     }
     catch (std::exception e){
         throw e;
     }
-    GPUProgram program;
-    program.create(vertSource.c_str(), fragSource.c_str(), output.c_str());
-    return program;
+    GPUProgram::create(vertSource.c_str(), fragSource.c_str(), output.c_str());
+    //return this;
 }

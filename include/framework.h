@@ -5,6 +5,7 @@
 // Do not change it if you want to submit a homework.
 // In the homework, file operations other than printf are prohibited.
 //=============================================================================================
+#pragma once
 #define _USE_MATH_DEFINES		// M_PI
 #include <stdio.h>
 #include <stdlib.h>
@@ -282,13 +283,13 @@ class GPUProgram {
 public:
 	GPUProgram(bool _waitError = true) { shaderProgramId = 0; waitError = _waitError; }
 
-	GPUProgram(const GPUProgram& program) {
-		if (program.shaderProgramId > 0) printf("\nError: GPU program is not copied on GPU!!!\n");
-	}
+	// GPUProgram(const GPUProgram& program) {
+	// 	if (program.shaderProgramId > 0) printf("\nError: GPU program is not copied on GPU!!!\n");
+	// }
 
-	void operator=(const GPUProgram& program) {
-		if (program.shaderProgramId > 0) printf("\nError: GPU program is not copied on GPU!!!\n");
-	}
+	// void operator=(const GPUProgram& program) {
+	// 	if (program.shaderProgramId > 0) printf("\nError: GPU program is not copied on GPU!!!\n");
+	// }
 
 	unsigned int getId() { return shaderProgramId; }
 

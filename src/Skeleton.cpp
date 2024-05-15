@@ -1,148 +1,11 @@
-//=============================================================================================
-// Mintaprogram: Zold haromszog. Ervenyes 2019. osztol.
-//
-// A beadott program csak ebben a fajlban lehet, a fajl 1 byte-os ASCII karaktereket tartalmazhat, BOM kihuzando.
-// Tilos:
-// - mast "beincludolni", illetve mas konyvtarat hasznalni
-// - faljmuveleteket vegezni a printf-et kiveve
-// - Mashonnan atvett programresszleteket forrasmegjeloles nelkul felhasznalni es
-// - felesleges programsorokat a beadott programban hagyni!!!!!!! 
-// - felesleges kommenteket a beadott programba irni a forrasmegjelolest kommentjeit kiveve
-// ---------------------------------------------------------------------------------------------
-// A feladatot ANSI C++ nyelvu forditoprogrammal ellenorizzuk, a Visual Studio-hoz kepesti elteresekrol
-// es a leggyakoribb hibakrol (pl. ideiglenes objektumot nem lehet referencia tipusnak ertekul adni)
-// a hazibeado portal ad egy osszefoglalot.
-// ---------------------------------------------------------------------------------------------
-// A feladatmegoldasokban csak olyan OpenGL fuggvenyek hasznalhatok, amelyek az oran a feladatkiadasig elhangzottak 
-// A keretben nem szereplo GLUT fuggvenyek tiltottak.
-//
-// NYILATKOZAT
-// ---------------------------------------------------------------------------------------------
-// Nev    : Banati Benedek
-// Neptun : BSA3ZV
-// ---------------------------------------------------------------------------------------------
-// ezennel kijelentem, hogy a feladatot magam keszitettem, es ha barmilyen segitseget igenybe vettem vagy
-// mas szellemi termeket felhasznaltam, akkor a forrast es az atvett reszt kommentekben egyertelmuen jeloltem.
-// A forrasmegjeloles kotelme vonatkozik az eloadas foliakat es a targy oktatoi, illetve a
-// grafhazi doktor tanacsait kiveve barmilyen csatornan (szoban, irasban, Interneten, stb.) erkezo minden egyeb
-// informaciora (keplet, program, algoritmus, stb.). Kijelentem, hogy a forrasmegjelolessel atvett reszeket is ertem,
-// azok helyessegere matematikai bizonyitast tudok adni. Tisztaban vagyok azzal, hogy az atvett reszek nem szamitanak
-// a sajat kontribucioba, igy a feladat elfogadasarol a tobbi resz mennyisege es minosege alapjan szuletik dontes.
-// Tudomasul veszem, hogy a forrasmegjeloles kotelmenek megsertese eseten a hazifeladatra adhato pontokat
-// negativ elojellel szamoljak el es ezzel parhuzamosan eljaras is indul velem szemben.
-//=============================================================================================
 #include "framework.h"
-
-const char* vertSource = R"(
-	#version 330
-	precision highp float;
-
-	uniform mat4 M, Minv, MVP;
-	uniform vec3 wEye;
-	uniform vec3 lDir;
-
-	layout(location = 0) in vec3 vtxPos; // pos in model sp
-	layout(location = 1) in vec3 vtxNorm;// normal in model sp
-	layout(location = 2) in vec2 textPos;
-
-	out vec3 wNormal;
-	out vec3 wView;
-	out vec3 wLight;
-
-	void main() {
-		gl_Position = vec4(vtxPos, 1) * MVP; // to NDC
-		vec4 wPos = vec4(vtxPos, 1) * M;
-		wLight = vec3(1, 2, 3);
-		wView = wEye - wPos.xyz/wPos.w;
-		wNormal = (Minv * vec4(vtxNorm, 0)).xyz;
-	}
-)";
-
-const char* fragSource = R"(
-	#version 330
-	precision highp float;
-
-	uniform vec3 kd, ks, ka;
-	uniform float shine;
-	uniform vec3 La, Le;
-
-	in vec3 wNormal;
-	in vec3 wView;
-	in vec3 wLight;
-	out vec4 outColor;
-
-	void main() {
-		vec3 N = normalize(wNormal);
-		vec3 V = normalize(wView);
-		vec3 L = normalize(wLight);
-		vec3 H = normalize(L + V);
-		float cost = max(dot(N, L), 0);
-		float cosd = max(dot(N, H), 0);
-		vec3 color = ka * La + (kd * cost + ks * pow(cosd, shine)) * Le;
-		outColor = vec4(color, 1);
-	}
-)";
-
-const char* gVertSource = R"(
-	#version 330
-	precision highp float;
-
-	uniform mat4 M, Minv, MVP;
-	uniform vec3 wEye;
-	uniform vec3 lDir;
-
-	layout(location = 0) in vec3 vtxPos; // pos in model sp
-	layout(location = 1) in vec3 vtxNorm;// normal in model sp
-	layout(location = 2) in vec2 textPos;
-
-	out vec3 wNormal;
-	out vec3 wView;
-	out vec3 wLight;
-	out vec2 uv;
-
-	void main() {
-		gl_Position = vec4(vtxPos, 1) * MVP; // to NDC
-		vec4 wPos = vec4(vtxPos, 1) * M;
-		wLight = vec3(1, 2, 3);
-		wView = wEye - wPos.xyz/wPos.w;
-		wNormal = (Minv * vec4(vtxNorm, 0)).xyz;
-		uv = textPos;
-	}
-)";
-
-const char* gFragSource = R"(
-	#version 330
-	precision highp float;
-
-	uniform vec3 ks, ka;
-	uniform float shine;
-	uniform vec3 La, Le;
-
-	uniform sampler2D text;
-
-	in vec2 uv;
-	in vec3 wNormal;
-	in vec3 wView;
-	in vec3 wLight;
-	out vec4 outColor;
-
-	void main() {
-		vec3 N = normalize(wNormal);
-		vec3 V = normalize(wView);
-		vec3 L = normalize(wLight);
-		vec3 H = normalize(L + V);
-		float cost = max(dot(N, L), 0);
-		float cosd = max(dot(N, H), 0);
-		vec3 color = ka * La + (texture(text, uv).xyz * cost + ks * pow(cosd, shine)) * Le;
-		outColor = vec4(color, 1);
-	}
-)";
+#include "shader.h"
 
 vec3 operator / (vec3 a, vec3 b) {
 	return vec3((float)a.x / b.x, (float)a.y / b.y, (float)a.z / b.z);
 }
-GPUProgram GPU;
-GPUProgram groundShader;
+Shader GPU;
+Shader groundShader;
 float deltaTime = 0;
 float lastFrame = 0;
 
@@ -291,7 +154,7 @@ class Plane : public ParamSurface {
 		this->pos = pos;
 		this->scale = scale;
 		this->rot = rot;
-		this->Create(3,3);
+		this->Create(1,1);
 	}
 	VertexData GenVertexData(float u, float v) {
 		VertexData vd;
@@ -663,8 +526,8 @@ void onInitialization(){
 	glClearColor(0.5f, 0.5f, 0.8f, 1.0f);
 	glViewport(0,0, windowWidth, windowHeight); 
 	
-	GPU.create(vertSource, fragSource, "outColor");
-	groundShader.create(gVertSource, gFragSource, "outColor");
+	GPU.createShader("./shaders/phong.vert", "./shaders/phong.frag", "outColor");
+	groundShader.createShader("./shaders/phongText.vert", "./shaders/phongText.frag", "outColor");
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	objects.push_back(new Ground());
