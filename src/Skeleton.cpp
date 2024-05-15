@@ -143,6 +143,8 @@ vec3 operator / (vec3 a, vec3 b) {
 }
 GPUProgram GPU;
 GPUProgram groundShader;
+float deltaTime = 0;
+float lastFrame = 0;
 
 class Camera {
 	vec3 wEye, wLookat, wVup;
@@ -408,11 +410,12 @@ class Track : public Plane {
 		//2.7-4.5
 		//4.5-5.4
 		t += num*0.15;
+		if (t < 0) t = 5.4+t;
 		float n = fmod(t, 5.4);
 		vec3 d;
 		if (n < 1.8) {
 			rot = vec3(0,0,0);
-			d = vec3(0, t, 0);
+			d = vec3(0, n, 0);
 		}
 		else if (n < 2.7) {
 			float dl = n - 1.8;
@@ -421,7 +424,7 @@ class Track : public Plane {
 		}
 		else if (n < 4.5) {
 			rot = vec3(M_PI, 0, 0);
-			d = vec3(0, 4.5-t, -0.6);
+			d = vec3(0, 4.5-n, -0.6);
 		}
 		else {
 			float dl = 5.4-n;
@@ -483,8 +486,12 @@ class Tank {
 	vec3 pos;
 	vec3 facing = vec3(0, 1, 0);
 	float rot;
-	float sRight;
-	float sLeft;
+	float sRight = 0;
+	float sLeft = 0;
+	float animRight = 0;
+	float animLeft = 0;
+	float baseRot = 0;
+	float canonLift = 0;
 
 	Cylinder* base;
 	Cylinder* canon;
@@ -517,11 +524,16 @@ class Tank {
 		backPlate->offset = pos;
 		frontPlate->offset = pos;
 		topPlate->offset = pos;
+		
+		animRight += sRight * deltaTime;
+		animLeft += sLeft * deltaTime;
+		animRight = fmod(animRight, 5.4);
+		animLeft = fmod(animLeft, 5.4);
 		for (Track* t : rightTracks) {
-			t->Animate(facing, pos, sRight, rot);
+			t->Animate(facing, pos, animRight, rot);
 		}
 		for (Track* t : leftTracks) {
-			t->Animate(facing, pos, sLeft, rot);
+			t->Animate(facing, pos, animLeft, rot);
 		}
 		camera.setTarget(pos + vec3(0, 0, 1.2), facing);
 	}
@@ -529,33 +541,48 @@ class Tank {
 	void Move(float angle) {
 		rot = angle;
 		facing = normalize(vec3(sinf(-angle), cosf(-angle), 0));
-		base->rOffset = vec3(0, 0, angle);
-		canon->rOffset = vec3(0, 0, angle);
+		base->rOffset = vec3(0, 0, angle + baseRot);
+		canon->rOffset = vec3(canonLift, 0, angle + baseRot);
 		canon->offset = vec3(pos.x + 0.3*sinf(-angle), pos.y + 0.3*cosf(-angle), 0);
 		backPlate->rOffset = vec3(0, 0, angle);
 		frontPlate->rOffset = vec3(0, 0, angle);
 		topPlate->rOffset = vec3(0, 0, angle);
-		for (Track* t : rightTracks) {
-			t->Animate(facing, pos, sRight, angle);
-		}
-		for (Track* t : leftTracks) {
-			t->Animate(facing, pos, sLeft, angle);
-		}
-		camera.setTarget(pos + vec3(0, 0, 1.2), facing);
 	}
 
 	void MoveY(float pos) {
 		Move(this->pos + facing*pos);
 	}
-	void Rotate(float rot) {
+	void RotateLeft(float rot) {
 		Move(this->rot + rot);
 		vec3 c = pos + normalize(vec3(-facing.y, facing.x, 0)) * 0.75;
 		vec3 p_ = pos - c;
 		vec4 p = vec4(p_.x, p_.y, p_.z, 1) * RotationMatrix(rot, vec3(0, 0, 1));
 		Move(vec3(p.x, p.y, p.z) + c);
 	}
+	void RotateRight(float rot) {
+		Move(this->rot - rot);
+		vec3 c = pos + normalize(vec3(facing.y, -facing.x, 0)) * 0.75;
+		vec3 p_ = pos - c;
+		vec4 p = vec4(p_.x, p_.y, p_.z, 1) * RotationMatrix(rot, vec3(0, 0, 1));
+		Move(vec3(p.x, p.y, p.z) + c);
+	}
+
+	void Animate() {
+		RotateLeft(1.5*sRight * deltaTime);
+		RotateRight(1.5*sLeft * deltaTime);
+		if (sRight >= 0 && sLeft >= 0) {
+			MoveY((sRight < sLeft ? sRight : sLeft) * deltaTime);
+		}
+		else if (sRight < 0 && sLeft < 0) {
+			MoveY((sRight > sLeft ? sRight : sLeft) * deltaTime);
+		}
+		else {
+			MoveY((abs(sRight) < abs(sLeft) ? sRight : sLeft) * deltaTime);
+		}
+	}
 
 	void Draw() {
+		Animate();
 		base->Draw();
 		canon->Draw();
 		backPlate->Draw();
@@ -567,6 +594,19 @@ class Tank {
 		for (Track* t : leftTracks) {
 			t->Draw();
 		}
+	}
+
+	void changeSpeedLeft(float s) {
+		sLeft += s;
+	}
+	void changeSpeedRight(float s) {
+		sRight += s;
+	}
+	void rotateBase(float angle) {
+		baseRot += angle;
+	}
+	void liftCanon(float angle) {
+		canonLift += angle;
 	}
 	~Tank() {
 		delete base;
@@ -595,6 +635,7 @@ void onInitialization(){
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	camera.setTarget(vec3(0,0,1.1), vec3(0, 1, 0));
+	lastFrame = glutGet(GLUT_ELAPSED_TIME) / 1000;
 }
 
 void onDisplay(){
@@ -608,34 +649,30 @@ void onDisplay(){
 }
 
 void onKeyboard(unsigned char key, int pX, int pY){
-	if (key == 'w') {
-		tank.MoveY(1);
-		glutPostRedisplay();
+	if (key == 'o') {
+		tank.changeSpeedRight(0.1);
 	}
-	// if (key == 's') {
-	// 	camera.wEye = camera.wEye + vec3(0, -1, 0);
-	// 	camera.wLookat = camera.wLookat + vec3(0, -1, 0);
-	// 	glutPostRedisplay();
-	// }
+	if (key == 'l') {
+		tank.changeSpeedRight(-0.1);
+	}
+	if (key == 'q') {
+		tank.changeSpeedLeft(0.1);
+	}
 	if (key == 'a') {
-		tank.Rotate(M_PI/36);
-		glutPostRedisplay();
+		tank.changeSpeedLeft(-0.1);
 	}
-	// if (key == 'd') {
-	// 	camera.wEye = camera.wEye + vec3(1, 0, 0);
-	// 	camera.wLookat = camera.wLookat + vec3(1, 0, 0);
-	// 	glutPostRedisplay();
-	// }
-	// if (key == 'q') {
-	// 	camera.wEye = camera.wEye + vec3(0, 0, -1);
-	// 	camera.wLookat = camera.wLookat + vec3(0, 0, -1);
-	// 	glutPostRedisplay();
-	// }
-	// if (key == 'e') {
-	// 	camera.wEye = camera.wEye + vec3(0, 0, 1);
-	// 	camera.wLookat = camera.wLookat + vec3(0, 0, 1);
-	// 	glutPostRedisplay();
-	// }
+	if (key == 'b') {
+		tank.rotateBase(M_PI/12);
+	}
+	if (key == 'n') {
+		tank.rotateBase(-M_PI/12);
+	}
+	if (key == 'w') {
+		tank.liftCanon(M_PI/36);
+	}
+	if (key == 's') {
+		tank.liftCanon(-M_PI/36);
+	}
 }
 
 void onKeyboardUp(unsigned char key, int pX, int pY){}
@@ -647,4 +684,9 @@ void onMouseMotion(int pX, int pY){
 void onMouse(int button, int state, int pX, int pY) {
 }
 
-void onIdle() {}
+void onIdle() {
+	float currentFrame = glutGet(GLUT_ELAPSED_TIME);
+	deltaTime = (currentFrame - lastFrame) / 1000;
+	lastFrame = currentFrame;
+	glutPostRedisplay();
+}
