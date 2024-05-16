@@ -65,6 +65,7 @@ struct vec3 {
 	vec3 operator-(const vec3& v) const { return vec3(x - v.x, y - v.y, z - v.z); }
 	vec3 operator*(const vec3& v) const { return vec3(x * v.x, y * v.y, z * v.z); }
 	vec3 operator-()  const { return vec3(-x, -y, -z); }
+	vec3 operator/(const vec3& b) const { return vec3(x / b.x, y / b.y,z / b.z); }
 };
 
 inline float dot(const vec3& v1, const vec3& v2) { return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z); }
@@ -283,13 +284,13 @@ class GPUProgram {
 public:
 	GPUProgram(bool _waitError = true) { shaderProgramId = 0; waitError = _waitError; }
 
-	// GPUProgram(const GPUProgram& program) {
-	// 	if (program.shaderProgramId > 0) printf("\nError: GPU program is not copied on GPU!!!\n");
-	// }
+	GPUProgram(const GPUProgram& program) {
+		if (program.shaderProgramId > 0) printf("\nError: GPU program is not copied on GPU!!!\n");
+	}
 
-	// void operator=(const GPUProgram& program) {
-	// 	if (program.shaderProgramId > 0) printf("\nError: GPU program is not copied on GPU!!!\n");
-	// }
+	void operator=(const GPUProgram& program) {
+		if (program.shaderProgramId > 0) printf("\nError: GPU program is not copied on GPU!!!\n");
+	}
 
 	unsigned int getId() { return shaderProgramId; }
 

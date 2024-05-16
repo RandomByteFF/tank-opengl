@@ -17,13 +17,11 @@ void Shader::createShader(const std::string vertFile, const std::string fragFile
         }
 
         vertReader.close();
-        printf(vertSource.c_str());
         fragReader.close();
-        printf(fragSource.c_str());
     }
     catch (std::exception e){
         throw e;
     }
     GPUProgram::create(vertSource.c_str(), fragSource.c_str(), output.c_str());
-    //return this;
+    shaders.push_back(this);
 }

@@ -1,111 +1,14 @@
 #include "framework.h"
 #include "shader.h"
+#include "geometry.h"
 
-vec3 operator / (vec3 a, vec3 b) {
-	return vec3((float)a.x / b.x, (float)a.y / b.y, (float)a.z / b.z);
-}
+
 Shader GPU;
 Shader groundShader;
 float deltaTime = 0;
 float lastFrame = 0;
 
-class Drawable {
-	public:
-	virtual void Draw() = 0;
-};
-
-class Camera {
-	vec3 wEye, wLookat, wVup;
-	float fov, asp, fp, bp;
-	public:
-	Camera() {
-		fov = M_PI/4;
-		asp = 1;
-		wEye = vec3(0, -4, 1.5);
-		wLookat = vec3(0,0,0);
-		wVup = vec3(0, 0, 1);
-		fp = 0.1;
-		bp = 50;
-	}
-
-	mat4 V() {
-		vec3 w = normalize(wEye - wLookat);
-		vec3 u = normalize(cross(wVup, w));
-		vec3 v = cross(w, u);
-		return TranslateMatrix(-wEye) * mat4 (u.x, v.x, w.x, 0,
-												u.y, v.y, w.y, 0,
-												u.z, v.z, w.z, 0,
-												0,0,0,1);
-	}
-	mat4 P() {
-		float sy = 1/tanf(fov/2);
-		return mat4(sy/asp, 0, 0, 0,
-					0, sy, 0, 0,
-					0, 0, -(fp+bp)/(bp-fp), -1,
-					0, 0, -2*fp*bp/(bp-fp), 0);
-	}
-
-	vec3 GetEye() {
-		return wEye;
-	}
-	void setTarget(vec3 target, vec3 facing) {
-		wLookat = target;
-		facing.z = 0;
-		facing = normalize(-facing)*6.2;
-		wEye = vec3(target.x + facing.x, target.y + facing.y, 1.5);
-		GPU.Use();
-		GPU.setUniform(wEye, "wEye");
-		groundShader.Use();
-		groundShader.setUniform(wEye, "wEye");
-	}
-};
 Camera camera;
-class Geometry : public Drawable{
-	protected:
-	vec3 scale, rot, pos;
-	unsigned int vao, vbo;
-	public:
-	vec3 offset, rOffset;
-	struct VertexData {
-		vec3 pos, norm;
-		vec2 tex;
-	};
-	Geometry() {
-		glGenVertexArrays(1, &vao);
-		glBindVertexArray(vao);
-		glGenBuffers(1, &vbo);
-	}
-
-	virtual void Draw() {
-		GPU.Use();
-		mat4 M = ScaleMatrix(scale) * 		
-		RotationMatrix(rot.x + rOffset.x, vec3(1, 0, 0))*
-		RotationMatrix(rot.y + rOffset.y, vec3(0, 1, 0)) *
-		RotationMatrix(rot.z + rOffset.z, vec3(0, 0, 1))*
-		TranslateMatrix(pos + offset);
-		mat4 Minv = TranslateMatrix(-(pos+offset))*	
-		RotationMatrix(-(rot.z + rOffset.z), vec3(0, 0, 1))*	
-		RotationMatrix(-(rot.y + rOffset.y), vec3(0, 1, 0)) *
-		RotationMatrix(-(rot.x + rOffset.x), vec3(1, 0, 0))*
-		ScaleMatrix(vec3(1,1,1)/scale);
-		mat4 MVP = M*camera.V()*camera.P();
-
-		GPU.setUniform(M, "M");
-		GPU.setUniform(Minv, "Minv");
-		GPU.setUniform(MVP, "MVP");
-		GPU.setUniform(vec3(0.4, 0.4, 0.4), "kd");
-		GPU.setUniform(vec3(1, 1, 1), "ks");
-		GPU.setUniform(vec3(0.2, 0.2, 0.2), "ka");
-		GPU.setUniform(5.f, "shine");
-		GPU.setUniform(vec3(1, 1, 1), "La");
-		GPU.setUniform(vec3(1, 1, 1), "Le");
-		//GPU.setUniform(vec3(1, 2, 3), "lDir");
-	}
-	virtual ~Geometry() {
-		glDeleteBuffers(1, &vbo);
-		glDeleteVertexArrays(1, &vao);
-	}
-};
 
 class ParamSurface : public Geometry {
 	protected:
