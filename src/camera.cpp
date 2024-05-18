@@ -1,5 +1,7 @@
 #include "camera.h"
 
+Camera* Camera::camera;
+
 Camera::Camera() {
     fov = M_PI/4;
     asp = 1;

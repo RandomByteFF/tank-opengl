@@ -10,11 +10,7 @@ class Shader : public GPUProgram {
     public:
     void createShader(const std::string vertFile, const std::string fragFile, std::string output);
 
-    static Shader* const getShader(int index) {
-        return shaders[index];
-    }
+    static Shader* const getShader(int index);
 
-    static size_t getShaderCount() {
-        return shaders.size();
-    }
+    static size_t getShaderCount();
 };

@@ -1,5 +1,7 @@
 #include "shader.h"
 
+std::vector<Shader*> Shader::shaders;
+
 void Shader::createShader(const std::string vertFile, const std::string fragFile, std::string output) {
     std::string vertSource;
     std::string fragSource;
@@ -24,4 +26,12 @@ void Shader::createShader(const std::string vertFile, const std::string fragFile
     }
     GPUProgram::create(vertSource.c_str(), fragSource.c_str(), output.c_str());
     shaders.push_back(this);
+}
+
+Shader * const Shader::getShader(int index) {
+    return shaders[index];
+}
+
+size_t Shader::getShaderCount() {
+    return shaders.size();
 }

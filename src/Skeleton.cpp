@@ -1,6 +1,7 @@
 #include "framework.h"
 #include "shader.h"
 #include "geometry.h"
+#include "paramSurface.h"
 
 
 Shader GPU;
@@ -10,162 +11,12 @@ float lastFrame = 0;
 
 Camera camera;
 
-class ParamSurface : public Geometry {
-	protected:
-	unsigned int nVtxStrip, nStrips;
-	virtual VertexData GenVertexData(float u, float v) = 0;
 
-	public:
-	void Create(size_t N, size_t M) {
-		nVtxStrip = (M + 1) * 2;
-		nStrips = N;
-		std::vector<VertexData> vtxData;
-		for (size_t i = 0; i < N; i++)
-		{
-			for (size_t j = 0; j <= M; j++)
-			{
-				vtxData.push_back(GenVertexData((float) j/M, (float) i/N));
-				vtxData.push_back(GenVertexData((float) j/M, (float) (i+1)/N));
-			}
-		}
-		
-		glBindVertexArray(vao);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-		glBufferData(GL_ARRAY_BUFFER, vtxData.size() * sizeof(VertexData), &vtxData[0], GL_STATIC_DRAW);
 
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glEnableVertexAttribArray(2);
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, pos));
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, norm));
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, tex));
-	}
 
-	void Draw() {
-		Geometry::Draw();
-		glBindVertexArray(vao);
-		for (size_t i = 0; i < nStrips; i++) {
-			glDrawArrays(GL_TRIANGLE_STRIP, i*nVtxStrip, nVtxStrip);
-		}
-	}
-};
 
-class Plane : public ParamSurface {
-	public:
-	Plane(vec3 pos, vec3 scale = vec3(1,1,1), vec3 rot = vec3(0,0,0)) {
-		this->pos = pos;
-		this->scale = scale;
-		this->rot = rot;
-		this->Create(1,1);
-	}
-	VertexData GenVertexData(float u, float v) {
-		VertexData vd;
-		vd.tex = vec2(u,v);
-		vd.pos = vec3(u-0.5, v-0.5, 0);
-		vd.norm = vec3(0, 0, 1);
-		return vd;
-	}
-};
-class Cylinder : public ParamSurface {
-	public:
-	Cylinder(vec3 pos, vec3 scale = vec3(1,1,1), vec3 rot = vec3(0,0,0)) {
-		this->pos = pos;
-		this->scale = scale;
-		this->rot = rot;
-		this->Create(2, 30);
-	}
-	VertexData GenVertexData(float u, float v) {
-		VertexData vd;
-		vd.tex = vec2(u,v);
-		vd.pos = vec3(cosf(2*M_PI*u)/2, sinf(2*M_PI*u)/2, v);
-		vd.norm = normalize(vec3(vd.pos.x, vd.pos.y, 0));
-		return vd;
-	}
-};
 
-class Triangle : public ParamSurface {
-	public:
-	Triangle(vec3 pos, vec3 scale = vec3(1,1,1), vec3 rot = vec3(0,0,0)) {
-		GPU.Use();
-		this->pos = pos;
-		this->scale = scale;
-		this->rot = rot;
-		
-		std::vector<VertexData> d(3);
-		d[0].pos = vec3(0, 0, 0);
-		d[0].norm = vec3(0, 0, 1);
-		d[0].tex = vec2(0.5, 1);
-
-		d[1].pos = vec3(-0.5, -1, 0);
-		d[1].norm = vec3(0,0,1);
-		d[1].tex = vec2(0, 0);
-
-		d[2].pos = vec3(0.5, -1, 0);
-		d[2].norm = vec3(0,0,1);
-		d[2].tex = vec2(1, 0);
-		
-		nVtxStrip = 3;
-		nStrips = 1;
-
-		glBindVertexArray(vao);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-		glBufferData(GL_ARRAY_BUFFER, d.size() * sizeof(VertexData), &d[0], GL_STATIC_DRAW);
-
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glEnableVertexAttribArray(2);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, pos));
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, norm));
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, tex));
-	}
-	VertexData GenVertexData(float u, float v) {
-		return VertexData();
-	}
-};
-
-class Circle : public Geometry {
-	size_t res;
-	public:
-	Circle(vec3 pos, vec3 scale = vec3(1,1,1), size_t res = 30) {
-		this->pos = pos;
-		this->scale = scale;
-		this->res = res;
-		this->Create(res);
-	}
-	void Create(size_t res) {
-		GPU.Use();
-		std::vector<VertexData> vtxData(res+2);
-		vtxData[0].norm = vec3(0,0,1);
-		vtxData[0].pos = vec3(0,0,0);
-		vtxData[0].tex = vec2(0.5, 0.5);
-		for (size_t i = 0; i < res+1; i++) 
-		{
-			vtxData[i+1].norm = vec3(0,0,1);
-			vtxData[i+1].pos = vec3(cosf(2*M_PI/res*i)/2, sinf(2*M_PI/res*i)/2, 0);
-		}
-		
-		
-		glBindVertexArray(vao);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-		glBufferData(GL_ARRAY_BUFFER, vtxData.size() * sizeof(VertexData), &vtxData[0], GL_STATIC_DRAW);
-
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glEnableVertexAttribArray(2);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, pos));
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, norm));
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, tex));
-	}
-
-	void Draw() {
-		Geometry::Draw();
-		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLE_FAN, 0, res+2);
-	}
-};
 
 class Track : public Plane {
 	bool right = true;

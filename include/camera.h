@@ -18,3 +18,4 @@ class Camera {
 	void setTarget(vec3 target, vec3 facing);
     static Camera* const GetInstance();
 };
+
