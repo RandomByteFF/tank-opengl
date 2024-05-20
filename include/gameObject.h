@@ -6,9 +6,9 @@ class GameObject {
     protected:
     std::vector<Geometry*> primitives;
     std::vector<GameObject*> children;
-    vec3 pos, rot, scale;
 
     public:
+    vec3 pos, rot, scale;
     GameObject(vec3 pos = vec3(0,0,0), vec3 scale = vec3(1,1,1), vec3 rot = vec3(0,0,0)) : pos(pos), rot(rot), scale(scale) {}
 
     void AddPrimitive(Geometry* primitive) {

@@ -20,7 +20,7 @@ void Tank::TurnLeft(float rot) {
 
 Tank::Tank(Material *mat) : GameObject()
 {
-    GameObject* turret = new GameObject();
+    turret = new GameObject();
     Cylinder* c = new Cylinder(mat, vec3(0, 0, 0.3), vec3(1.1, 1.1, 0.8)); //body
     turret->AddPrimitive(c);
 
@@ -33,7 +33,7 @@ Tank::Tank(Material *mat) : GameObject()
     Circle* ci = new Circle(mat, vec3(0, 0, 1.1), vec3(1.1, 1.1, 1)); //top plate
     AddPrimitive(ci);
 
-    Cylinder* canon = new Cylinder(mat, vec3(0, 0.3, 0.9), vec3(0.2, 0.2, 1.5), vec3(M_PI/2*3, 0, 0)); //canon
+    canon = new Cylinder(mat, vec3(0, 0.3, 0.9), vec3(0.2, 0.2, 1.5), vec3(M_PI/2*3, 0, 0)); //canon
     turret->AddPrimitive(canon);
     AddChild(turret);
 
@@ -75,6 +75,14 @@ void Tank::ChangeSpeedRight(float speed) {
 
 void Tank::ChangeSpeedLeft(float speed) {
     speedLeft += speed;
+}
+
+void Tank::RotateTurret(float angle) {
+    turret->rot = vec3(0, 0, turret->rot.z + angle);
+}
+
+void Tank::LiftCanon(float angle) {
+    canon->rot = vec3(canon->rot.x + angle, 0, 0);
 }
 
 vec3 Tank::GetFacing() {

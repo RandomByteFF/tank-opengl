@@ -11,7 +11,6 @@ struct VertexData {
 class Geometry {
 	protected:
     Material* material;
-	vec3 scale, rot, pos;
 
 	unsigned int vao, vbo;
 	std::vector<VertexData> vtxData;
@@ -19,6 +18,7 @@ class Geometry {
 	void SetMVP();
 
 	public:
+	vec3 scale, rot, pos;
 	vec3 offset, rOffset;
 
 	Geometry(Material* material);

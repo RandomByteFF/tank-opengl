@@ -27,10 +27,10 @@ void GameObject::Draw()
 void GameObject::Draw(vec3 parentPos, vec3 parentRot, vec3 parentScale) {
     for (Geometry* g : primitives) {
         vec3 p = parentPos + this->pos + g->getPos();
-        p = RotateAroundPoint(parentPos+this->pos, p, vec3(0,0,1), parentRot.z);
-        p = RotateAroundPoint(parentPos+this->pos, p, vec3(0,1,0), parentRot.y);
-        p = RotateAroundPoint(parentPos+this->pos, p, vec3(1,0,0), parentRot.x);
         g->rOffset = rot + parentRot;
+        p = RotateAroundPoint(parentPos+this->pos, p, vec3(0,0,1), g->rOffset.z);
+        p = RotateAroundPoint(parentPos+this->pos, p, vec3(0,1,0), g->rOffset.y);
+        p = RotateAroundPoint(parentPos+this->pos, p, vec3(1,0,0), g->rOffset.x);
         g->offset = p - g->getPos();
         g->Draw();
     }

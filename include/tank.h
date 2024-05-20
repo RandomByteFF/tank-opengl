@@ -24,6 +24,8 @@ class Tank : public GameObject {
 
     Track* rightTrack;
     Track* leftTrack;
+    GameObject* turret;
+    Cylinder* canon;
 
     public:
     Tank(Material* mat);
@@ -31,6 +33,8 @@ class Tank : public GameObject {
 
     void ChangeSpeedRight(float speed);
     void ChangeSpeedLeft(float speed);
+    void RotateTurret(float angle);
+    void LiftCanon(float angle);
 
     vec3 GetFacing();
 };
