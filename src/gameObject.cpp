@@ -10,10 +10,15 @@ vec3 GameObject::RotateAroundPoint(vec3 pivot, vec3 point, vec3 axis, float angl
 void GameObject::Draw()
 {
     for (Geometry* g : primitives) {
+        vec3 p = this->pos + g->getPos();
+        p = RotateAroundPoint(this->pos, p, vec3(0,0,1), rot.z);
+        p = RotateAroundPoint(this->pos, p, vec3(0,1,0), rot.y);
+        p = RotateAroundPoint(this->pos, p, vec3(1,0,0), rot.x);
         g->rOffset = rot;
-        g->offset = pos;
+        g->offset = p - g->getPos();
         g->Draw();
     }
+    
     for (GameObject* g : children) {
         g->Draw(pos, rot, scale);
     }

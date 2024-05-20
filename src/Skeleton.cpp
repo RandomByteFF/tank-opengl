@@ -302,7 +302,7 @@ void onDisplay(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	scene.Render();
+	scene.Render(deltaTime);
 	// for(Drawable* g : objects) {
 	// 	g->Draw();
 	// }
@@ -311,18 +311,18 @@ void onDisplay(){
 }
 
 void onKeyboard(unsigned char key, int pX, int pY){
-	// if (key == 'o') {
-	// 	tank.changeSpeedRight(0.1);
-	// }
-	// if (key == 'l') {
-	// 	tank.changeSpeedRight(-0.1);
-	// }
-	// if (key == 'q') {
-	// 	tank.changeSpeedLeft(0.1);
-	// }
-	// if (key == 'a') {
-	// 	tank.changeSpeedLeft(-0.1);
-	// }
+	if (key == 'o') {
+		player->ChangeSpeedRight(0.1);
+	}
+	if (key == 'l') {
+		player->ChangeSpeedRight(-0.1);
+	}
+	if (key == 'q') {
+		player->ChangeSpeedLeft(0.1);
+	}
+	if (key == 'a') {
+		player->ChangeSpeedLeft(-0.1);
+	}
 	// if (key == 'b') {
 	// 	tank.rotateBase(M_PI/12);
 	// }
@@ -335,9 +335,6 @@ void onKeyboard(unsigned char key, int pX, int pY){
 	// if (key == 's') {
 	// 	tank.liftCanon(-M_PI/36);
 	// }
-	if (key == 'a') {
-		player->RotateRight(M_PI/36);
-	}
 }
 
 void onKeyboardUp(unsigned char key, int pX, int pY){}

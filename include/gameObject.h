@@ -21,7 +21,14 @@ class GameObject {
 
     void Draw();
     void Draw(vec3 parentPos, vec3 parentRot, vec3 parentScale);
-    ~GameObject() {
+
+    virtual void Animate(float deltaTime) {
+        for (GameObject* g : children) {
+            g->Animate(deltaTime);
+        }
+    }
+
+    virtual ~GameObject() {
         for (Geometry* g : primitives) {
             delete g;
         }

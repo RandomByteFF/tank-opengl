@@ -8,7 +8,10 @@ class Scene {
         objects.push_back(object);
     }
 
-    void Render() {
+    void Render(float deltaTime) {
+        for (GameObject* object : objects) {
+            object->Animate(deltaTime);
+        }
         for (GameObject* object : objects) {
             object->Draw();
         }

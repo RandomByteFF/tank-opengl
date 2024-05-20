@@ -5,11 +5,28 @@
 #include "circle.h"
 #include "plane.h"
 
-class Tank : public GameObject{
+class Tank : public GameObject {
+    float speedRight = 0;
+    float speedLeft = 0;
+
+    void Rotate(float angle);
+    void Move(float speed);
+
+    bool feq(float a, float b) {
+		return abs(a-b) < 0.0001;
+	}
+
+    void TurnRight(float rot);
+    void TurnLeft(float rot);
+
     public:
     Tank(Material* mat);
+    void Animate(float deltaTime) override;
 
-    void RotateRight(float angle);
+    void ChangeSpeedRight(float speed);
+    void ChangeSpeedLeft(float speed);
+
+    vec3 GetFacing();
 };
 
 class Track : public GameObject{
