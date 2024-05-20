@@ -5,6 +5,8 @@
 #include "phong.h"
 #include "gameObject.h"
 #include "plane.h"
+#include "scene.h"
+#include "tank.h"
 
 
 Shader GPU;
@@ -272,15 +274,15 @@ float lastFrame = 0;
 
 //std::vector<Drawable*> objects;
 //Tank tank;
-Phong* mat;
-GameObject* obj;
+Scene scene;
+Tank* player;
 void onInitialization(){
 	glClearColor(0.5f, 0.5f, 0.8f, 1.0f);
 	glViewport(0,0, windowWidth, windowHeight); 
 	
 	GPU.createShader("./shaders/phong.vert", "./shaders/phong.frag", "outColor");
 	groundShader.createShader("./shaders/phongText.vert", "./shaders/phongText.frag", "outColor");
-	mat = new Phong(&GPU);
+	Material* mat = new Phong(&GPU);
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	// objects.push_back(new Ground());
@@ -290,8 +292,8 @@ void onInitialization(){
 	// tank.Init();
 	// tank.RotateRight(M_PI/2);
 	// tank.Move(vec3(0, 0, 0));
-	obj = new GameObject();
-	obj->AddPrimitive(new Plane(mat, vec3(0,0,0)));
+	player = new Tank(mat);
+	scene.AddObject(player);
 
 	lastFrame = glutGet(GLUT_ELAPSED_TIME) / 1000;
 }
@@ -300,7 +302,7 @@ void onDisplay(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	obj->Draw();
+	scene.Render();
 	// for(Drawable* g : objects) {
 	// 	g->Draw();
 	// }
@@ -333,9 +335,9 @@ void onKeyboard(unsigned char key, int pX, int pY){
 	// if (key == 's') {
 	// 	tank.liftCanon(-M_PI/36);
 	// }
-	// if (key == 'a') {
-	// 	tank.MoveY(1);
-	// }
+	if (key == 'a') {
+		player->RotateRight(M_PI/36);
+	}
 }
 
 void onKeyboardUp(unsigned char key, int pX, int pY){}
@@ -348,6 +350,7 @@ void onMouse(int button, int state, int pX, int pY) {
 }
 
 void onIdle() {
+	//TODO: Time class
 	float currentFrame = glutGet(GLUT_ELAPSED_TIME);
 	deltaTime = (currentFrame - lastFrame) / 1000;
 	lastFrame = currentFrame;

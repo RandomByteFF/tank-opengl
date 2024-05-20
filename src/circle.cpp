@@ -5,7 +5,7 @@ Circle::Circle(Material * mat, vec3 pos, vec3 scale, size_t res) : Geometry(mat)
     this->scale = scale;
     this->res = res;
     
-    std::vector<VertexData> vtxData(res+2);
+    vtxData = std::vector<VertexData>(res+2);
     vtxData[0].norm = vec3(0,0,1);
     vtxData[0].pos = vec3(0,0,0);
     vtxData[0].tex = vec2(0.5, 0.5);

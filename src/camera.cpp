@@ -14,8 +14,8 @@ Camera::Camera()
 {
     fov = M_PI/4;
     asp = 1;
-    wEye = vec3(0, -4, 1.5);
-    wLookat = vec3(0,0,0);
+    wEye = vec3(0, -6.2, 1.5);
+    wLookat = vec3(0,0,1.1);
     wVup = vec3(0, 0, 1);
     fp = 0.1;
     bp = 50;
