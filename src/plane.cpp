@@ -1,9 +1,10 @@
 #include "plane.h"
 
-Plane::Plane(Material * mat, vec3 pos, vec3 scale, vec3 rot) : ParamSurface(3, 3, mat) {
+Plane::Plane(Material * mat, vec3 pos, vec3 scale, vec3 rot) : ParamSurface(mat) {
     this->pos = pos;
     this->scale = scale;
     this->rot = rot;
+    this->Create(3,3);
 }
 
 VertexData Plane::GenVertexData(float u, float v) {

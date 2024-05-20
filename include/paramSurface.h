@@ -8,7 +8,8 @@ class ParamSurface : public Geometry {
 	virtual VertexData GenVertexData(float u, float v) = 0;
 
 	public:
-	ParamSurface(size_t N, size_t M, Material* material);
+	ParamSurface(Material* material) : Geometry(material) {};
+	void Create(size_t N, size_t M);
 
 	void Draw() override;
 };

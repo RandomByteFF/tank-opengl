@@ -2,7 +2,16 @@
 
 Camera* Camera::camera;
 
-Camera::Camera() {
+void Camera::UploadwEye() {
+    for (size_t i = 0; i < Shader::getShaderCount(); i++) {
+        Shader* shader = Shader::getShader(i);
+        shader->Use();
+        shader->setUniform(wEye, "wEye");
+    }
+}
+
+Camera::Camera()
+{
     fov = M_PI/4;
     asp = 1;
     wEye = vec3(0, -4, 1.5);
@@ -10,6 +19,7 @@ Camera::Camera() {
     wVup = vec3(0, 0, 1);
     fp = 0.1;
     bp = 50;
+    UploadwEye();
 }
 
 mat4 Camera::V() {
@@ -34,12 +44,7 @@ void Camera::setTarget(vec3 target, vec3 facing) {
     facing.z = 0;
     facing = normalize(-facing)*6.2;
     wEye = vec3(target.x + facing.x, target.y + facing.y, 1.5);
-    for (size_t i = 0; i < Shader::getShaderCount(); i++)
-    {
-        Shader* shader = Shader::getShader(i);
-        shader->Use();
-        shader->setUniform(wEye, "wEye");
-    }
+    UploadwEye();
 }
 
 Camera* const Camera::GetInstance() {

@@ -1,6 +1,7 @@
 #include "geometry.h"
 
 void Geometry::SetMVP() {
+	material->Set();
 	material->getShader()->Use();
 
 	mat4 M = ScaleMatrix(scale) * 		

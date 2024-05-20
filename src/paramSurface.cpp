@@ -1,9 +1,8 @@
 #include "paramSurface.h"
 
-ParamSurface::ParamSurface(size_t N, size_t M, Material* material) : Geometry(material) {
+void ParamSurface::Create(size_t N, size_t M) {
     nVtxStrip = (M + 1) * 2;
     nStrips = N;
-    std::vector<VertexData> vtxData;
     for (size_t i = 0; i < N; i++)
     {
         for (size_t j = 0; j <= M; j++)
@@ -15,7 +14,8 @@ ParamSurface::ParamSurface(size_t N, size_t M, Material* material) : Geometry(ma
     Upload();
 }
 
-void ParamSurface::Draw() {
+void ParamSurface::Draw()
+{
     SetMVP();
     glBindVertexArray(vao);
     for (size_t i = 0; i < nStrips; i++) {

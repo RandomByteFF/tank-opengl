@@ -1,6 +1,7 @@
 #pragma once
 #include "framework.h"
 
+//TODO: material shouldn't set itself if it's already in use
 class Material {
     protected:
     GPUProgram* shader;

@@ -5,5 +5,6 @@
 
 class Phong : public Material {
     public:
+    using Material::Material;
     void Set() override;
 };

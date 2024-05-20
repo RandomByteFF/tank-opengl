@@ -1,9 +1,10 @@
 #include "cylinder.h"
 
-Cylinder::Cylinder(Material * mat, vec3 pos, vec3 scale, vec3 rot) : ParamSurface(2,30, mat) {
+Cylinder::Cylinder(Material * mat, vec3 pos, vec3 scale, vec3 rot) : ParamSurface(mat) {
     this->pos = pos;
     this->scale = scale;
     this->rot = rot;
+    this->Create(2,30);
 }
 
 VertexData Cylinder::GenVertexData(float u, float v) {
