@@ -7,6 +7,8 @@
 #include "plane.h"
 #include "scene.h"
 #include "tank.h"
+#include "phongText.h"
+#include "pyramid.h"
 
 
 Shader GPU;
@@ -14,21 +16,6 @@ Shader groundShader;
 float deltaTime = 0;
 float lastFrame = 0;
 
-// class Pyramid : public Drawable {
-// 	std::vector<Triangle*> triangles;
-// 	public:
-// 	Pyramid(vec3 pos, vec3 scale = vec3(1,1,1), float rot = 0) {
-// 		triangles.push_back(new Triangle(pos, scale, vec3(M_PI/3, 0, rot)));
-// 		triangles.push_back(new Triangle(pos, scale, vec3(M_PI/3, 0, rot + M_PI/2)));
-// 		triangles.push_back(new Triangle(pos, scale, vec3(M_PI/3, 0, rot + M_PI/2*2)));
-// 		triangles.push_back(new Triangle(pos, scale, vec3(M_PI/3, 0, rot + M_PI/2*3)));
-// 	}
-// 	void Draw() {
-// 		for (Triangle* t : triangles) {
-// 			t->Draw();
-// 		}
-// 	}
-// };
 
 Scene scene;
 Tank* player;
@@ -39,12 +26,16 @@ void onInitialization(){
 	GPU.createShader("./shaders/phong.vert", "./shaders/phong.frag", "outColor");
 	groundShader.createShader("./shaders/phongText.vert", "./shaders/phongText.frag", "outColor");
 	Material* mat = new Phong(&GPU);
-
+	Material* groundMat = new PhongText(&groundShader);
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
+	GameObject* ground = new GameObject();
+	ground->AddPrimitive(new Plane(groundMat, vec3(0,0,-0.01), vec3(200, 200, 1)));
+	scene.AddObject(ground);
 	player = new Tank(mat);
 	scene.AddObject(player);
+	scene.AddObject(new Pyramid(mat, vec3(5, 10, 2)));
 
 	lastFrame = glutGet(GLUT_ELAPSED_TIME) / 1000;
 }
@@ -54,6 +45,7 @@ void onDisplay(){
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	scene.Render(deltaTime);
+	Camera::GetInstance()->setTarget(vec3(0, 0, 1.1) + player->pos, player->GetLookDirection());
 	glutSwapBuffers();
 }
 

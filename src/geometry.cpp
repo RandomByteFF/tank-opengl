@@ -1,8 +1,8 @@
 #include "geometry.h"
 
 void Geometry::SetMVP() {
+	//material->getShader()->Use();
 	material->Set();
-	material->getShader()->Use();
 
 	mat4 M = ScaleMatrix(scale) * 		
 	RotationMatrix(rot.x + rOffset.x, vec3(1, 0, 0))*

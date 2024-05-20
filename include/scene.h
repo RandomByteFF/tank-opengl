@@ -1,6 +1,7 @@
 #pragma once
 #include "gameObject.h"
 
+
 class Scene {
     std::vector<GameObject*> objects;
     public:
@@ -12,6 +13,7 @@ class Scene {
         for (GameObject* object : objects) {
             object->Animate(deltaTime);
         }
+        
         for (GameObject* object : objects) {
             object->Draw();
         }

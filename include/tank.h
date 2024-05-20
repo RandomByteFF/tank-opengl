@@ -37,6 +37,7 @@ class Tank : public GameObject {
     void LiftCanon(float angle);
 
     vec3 GetFacing();
+    vec3 GetLookDirection();
 };
 
 class Track : public GameObject{

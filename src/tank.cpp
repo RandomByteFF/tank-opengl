@@ -89,6 +89,13 @@ vec3 Tank::GetFacing() {
     return normalize(vec3(-sinf(rot.z), cosf(rot.z), 0));
 }
 
+vec3 Tank::GetLookDirection() {
+    float angle = turret->rot.z;
+    vec3 facing = GetFacing();
+    vec4 f = vec4(facing.x, facing.y, facing.z, 1) * RotationMatrix(angle, vec3(0, 0, 1));
+    return vec3(f.x, f.y, f.z);
+}
+
 void Tank::Rotate(float angle) {
     rot = vec3(0, 0, rot.z + angle);
 }
