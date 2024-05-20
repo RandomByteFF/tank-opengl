@@ -29,5 +29,7 @@ class Geometry {
 
 	virtual void Upload();
 
+	vec3 getPos() { return pos; }
+
 	virtual ~Geometry();
 };

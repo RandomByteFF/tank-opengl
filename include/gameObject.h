@@ -2,6 +2,7 @@
 #include "geometry.h"
 
 class GameObject { 
+    static vec3 RotateAroundPoint(vec3 pivot, vec3 point, vec3 axis, float angle);
     protected:
     std::vector<Geometry*> primitives;
     std::vector<GameObject*> children;
