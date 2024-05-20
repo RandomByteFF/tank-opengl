@@ -5,9 +5,12 @@
 #include "circle.h"
 #include "plane.h"
 
+class Track;
 class Tank : public GameObject {
     float speedRight = 0;
     float speedLeft = 0;
+    float animLeft = 0;
+    float animRight = 0;
 
     void Rotate(float angle);
     void Move(float speed);
@@ -18,6 +21,9 @@ class Tank : public GameObject {
 
     void TurnRight(float rot);
     void TurnLeft(float rot);
+
+    Track* rightTrack;
+    Track* leftTrack;
 
     public:
     Tank(Material* mat);
@@ -31,7 +37,8 @@ class Tank : public GameObject {
 
 class Track : public GameObject{
     public:
-    Track(Material* mat);
+    Track(Material* mat, bool right);
+    void Animate(float t) override;
 };
 
 class TrackElement : public Plane {

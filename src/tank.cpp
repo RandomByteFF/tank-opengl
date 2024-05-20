@@ -37,8 +37,10 @@ Tank::Tank(Material *mat) : GameObject()
     turret->AddPrimitive(canon);
     AddChild(turret);
 
-    Track* tr = new Track(mat);
-    AddChild(tr);
+    rightTrack = new Track(mat, true);
+    leftTrack = new Track(mat, false);
+    AddChild(rightTrack);
+    AddChild(leftTrack);
 }
 
 void Tank::Animate(float deltaTime) {
@@ -59,6 +61,12 @@ void Tank::Animate(float deltaTime) {
     else {
         Move((abs(speedRight) < abs(speedLeft) ? speedRight : speedLeft) * deltaTime);
     }
+
+    animRight += speedRight * deltaTime;
+    animLeft += speedLeft * deltaTime;
+
+    rightTrack->Animate(animRight);
+    leftTrack->Animate(animLeft);
 }
 
 void Tank::ChangeSpeedRight(float speed) {
@@ -81,23 +89,25 @@ void Tank::Move(float speed) {
     pos = pos + vec3(-speed * sinf(rot.z), speed * cosf(rot.z), 0);
 }
 
-Track::Track(Material *mat) {
+Track::Track(Material *mat, bool right) : GameObject() {
     for (size_t i = 0; i < 36; i++) {
-        TrackElement* t = new TrackElement(mat, true, i);
-        AddPrimitive(t);
-    }
-    for (size_t i = 0; i < 36; i++) {
-        TrackElement* t = new TrackElement(mat, false, i);
+        TrackElement* t = new TrackElement(mat, right, i);
         AddPrimitive(t);
     }
 }
-void TrackElement::Animate(float t) {
+void Track::Animate(float t){
+    for (Geometry* g : primitives) {
+        ((TrackElement*)g)->Animate(t);
+    }
+}
+void TrackElement::Animate(float t)
+{
     //0-1.8
     //1.8-2.7
     //2.7-4.5
     //4.5-5.4
     t += num*0.15;
-    if (t < 0) t = 5.4+t;
+    if (t < 0) t += -floor(t/5.4)*5.4;
     float n = fmod(t, 5.4);
     vec3 d;
     if (n < 1.8) {
