@@ -14,6 +14,7 @@ class Tank : public GameObject {
     float speedLeft = 0;
     float animLeft = 0;
     float animRight = 0;
+    bool destroyed = false;
     Material* bulletMat;
 
     void Rotate(float angle);
@@ -43,7 +44,8 @@ class Tank : public GameObject {
     vec3 GetFacing();
     vec3 GetLookDirection();
     void Shoot();
-    void Destroy();
+    void Draw(bool destroyed = false) override;
+    void Destroy() override;
 };
 
 class Track : public GameObject{

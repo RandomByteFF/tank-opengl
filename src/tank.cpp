@@ -46,7 +46,7 @@ Tank::Tank(Material *mat) : GameObject()
 }
 
 void Tank::Animate(float deltaTime) {
-
+    if (destroyed) return;
     TurnRight(1.5*speedLeft * deltaTime);
     TurnLeft(1.5*speedRight * deltaTime);
     Rotate(1.5*speedRight * deltaTime);
@@ -109,6 +109,10 @@ void Tank::Shoot() {
     Scene::Get()->AddObject(b);
 }
 
+void Tank::Draw(bool destroyed) {
+    GameObject::Draw(this->destroyed);
+}
+
 void Tank::Rotate(float angle) {
     rot = vec3(0, 0, rot.z + angle);
 }
@@ -130,7 +134,10 @@ void Track::Animate(float t){
 }
 
 void Tank::Destroy() {
+    if (destroyed) return;
+    destroyed = true;
     printf("hit");
+    GameObject::Destroy();
 }
 
 void TrackElement::Animate(float t)

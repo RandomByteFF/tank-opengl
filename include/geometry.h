@@ -31,5 +31,7 @@ class Geometry {
 
 	vec3 getPos() { return pos; }
 
+	virtual void Destroy() {}
+
 	virtual ~Geometry();
 };

@@ -47,7 +47,8 @@ void Geometry::Upload() {
 	glBufferData(GL_ARRAY_BUFFER, vtxData.size() * sizeof(VertexData), &vtxData[0], GL_STATIC_DRAW);
 }
 
-Geometry::~Geometry() {
+Geometry::~Geometry()
+{
     glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &vao);
 }

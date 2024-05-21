@@ -10,6 +10,7 @@
 #include "phongText.h"
 #include "pyramid.h"
 #include "bullet.h"
+#include "timeManager.h"
 
 
 Shader GPU;
@@ -37,7 +38,7 @@ void onInitialization(){
 	scene.AddObject(ground);
 	player = new Tank(mat);
 	enemy = new Tank(mat);
-	enemy->pos = vec3(0, 10, 0);
+	enemy->pos = vec3(0, 5, 0);
 	scene.AddTank(player);
 	scene.AddTank(enemy);
 	scene.AddObject(new Pyramid(mat, vec3(5, 10, 2)));
@@ -98,5 +99,6 @@ void onIdle() {
 	float currentFrame = glutGet(GLUT_ELAPSED_TIME);
 	deltaTime = (currentFrame - lastFrame) / 1000;
 	lastFrame = currentFrame;
+	Time::Update();
 	glutPostRedisplay();
 }

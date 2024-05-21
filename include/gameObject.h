@@ -19,12 +19,21 @@ class GameObject {
         children.push_back(child);
     }
 
-    void Draw();
-    void Draw(vec3 parentPos, vec3 parentRot, vec3 parentScale);
+    virtual void Draw(bool destroyed = false);
+    virtual void Draw(vec3 parentPos, vec3 parentRot, vec3 parentScale, bool destroyed = false);
 
     virtual void Animate(float deltaTime) {
         for (GameObject* g : children) {
             g->Animate(deltaTime);
+        }
+    }
+
+    virtual void Destroy() {
+        for (Geometry* g : primitives) {
+            g->Destroy();
+        }
+        for (GameObject* g : children) {
+            g->Destroy();
         }
     }
 
