@@ -20,6 +20,7 @@ float lastFrame = 0;
 
 Scene scene;
 Tank* player;
+Tank* enemy;
 void onInitialization(){
 	glClearColor(0.5f, 0.5f, 0.8f, 1.0f);
 	glViewport(0,0, windowWidth, windowHeight); 
@@ -35,7 +36,10 @@ void onInitialization(){
 	ground->AddPrimitive(new Plane(groundMat, vec3(0,0,-0.01), vec3(200, 200, 1)));
 	scene.AddObject(ground);
 	player = new Tank(mat);
-	scene.AddObject(player);
+	enemy = new Tank(mat);
+	enemy->pos = vec3(0, 10, 0);
+	scene.AddTank(player);
+	scene.AddTank(enemy);
 	scene.AddObject(new Pyramid(mat, vec3(5, 10, 2)));
 
 	lastFrame = glutGet(GLUT_ELAPSED_TIME) / 1000;

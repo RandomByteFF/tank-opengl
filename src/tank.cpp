@@ -105,7 +105,7 @@ void Tank::Shoot() {
     vec4 lookRotated = vec4(look.x, look.y, look.z, 1) * RotationMatrix(-canon->rot.x-M_PI/2, perp);
     vec3 rotatedLook = vec3(lookRotated.x, lookRotated.y, lookRotated.z);
 
-    Bullet* b = new Bullet(bulletMat, pos + rotatedLook*1.5 + look*0.3 + vec3(0,0,0.9), vec3(0.2, 0.2, 0.2), rotatedLook*10);
+    Bullet* b = new Bullet(bulletMat, pos + rotatedLook*1.5 + look*0.3 + vec3(0,0,0.9), vec3(0.2, 0.2, 0.2), rotatedLook*10, this);
     Scene::Get()->AddObject(b);
 }
 
@@ -128,6 +128,11 @@ void Track::Animate(float t){
         ((TrackElement*)g)->Animate(t);
     }
 }
+
+void Tank::Destroy() {
+    printf("hit");
+}
+
 void TrackElement::Animate(float t)
 {
     //0-1.8

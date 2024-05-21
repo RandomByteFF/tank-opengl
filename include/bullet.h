@@ -1,12 +1,18 @@
 #pragma once
 #include "gameObject.h"
 #include "paramSurface.h"
+#include "tank.h"
+//#include "scene.h"
+
+class Tank;
+//class Scene;
 
 //TODO: killz
 class Bullet : public GameObject {
     vec3 velocity;
     public:
-    Bullet(Material *material, vec3 pos, vec3 scale, vec3 velocity);
+    const Tank* source;
+    Bullet(Material *material, vec3 pos, vec3 scale, vec3 velocity, Tank* source);
     void Animate(float deltaTime) override;
 };
 

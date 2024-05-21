@@ -43,6 +43,7 @@ class Tank : public GameObject {
     vec3 GetFacing();
     vec3 GetLookDirection();
     void Shoot();
+    void Destroy();
 };
 
 class Track : public GameObject{
