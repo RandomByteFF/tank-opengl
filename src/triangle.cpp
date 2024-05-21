@@ -21,8 +21,30 @@ Triangle::Triangle(Material * mat, vec3 pos, vec3 scale, vec3 rot) : Geometry(ma
     Upload();
 }
 
+void Triangle::Destroy() {
+    destroyed = true;
+}
+
 void Triangle::Draw() {
     SetMVP();
     glBindVertexArray(vao);
+    if (destroyed) {
+        offset = offset - vec3(0, 0, downVelocity) * Time::DeltaTime();
+        downVelocity += 0.6f * Time::DeltaTime();
+        for (size_t i = 0; i < vtxData.size(); i+=3)
+        {
+            vec3 n1 = vtxData[i].norm;
+            vec3 n2 = vtxData[i+1].norm;
+            vec3 n3 = vtxData[i+2].norm;
+
+            vec3 averageNormal = normalize((n1 + n2 + n3) / 3.0f);
+            vec3 offs = (averageNormal* 0.3f)*Time::DeltaTime();
+            
+            vtxData[i].pos = vtxData[i].pos + offs;
+            vtxData[i+1].pos = vtxData[i+1].pos + offs;
+            vtxData[i+2].pos = vtxData[i+2].pos + offs;
+        }
+        Upload();
+    }
     glDrawArrays(GL_TRIANGLES, 0, 3);
 }

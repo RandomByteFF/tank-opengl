@@ -11,6 +11,7 @@
 #include "pyramid.h"
 #include "bullet.h"
 #include "timeManager.h"
+#include "enemyAI.h"
 
 
 Shader GPU;
@@ -38,6 +39,8 @@ void onInitialization(){
 	scene.AddObject(ground);
 	player = new Tank(mat);
 	enemy = new Tank(mat);
+	EnemyAI::enemy = enemy;
+	EnemyAI::player = player;
 	enemy->pos = vec3(0, 5, 0);
 	scene.AddTank(player);
 	scene.AddTank(enemy);
@@ -100,5 +103,8 @@ void onIdle() {
 	deltaTime = (currentFrame - lastFrame) / 1000;
 	lastFrame = currentFrame;
 	Time::Update();
+	EnemyAI::Update();
 	glutPostRedisplay();
+
 }
+

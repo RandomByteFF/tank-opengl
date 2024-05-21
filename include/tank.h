@@ -14,7 +14,6 @@ class Tank : public GameObject {
     float speedLeft = 0;
     float animLeft = 0;
     float animRight = 0;
-    bool destroyed = false;
     Material* bulletMat;
 
     void Rotate(float angle);
@@ -33,6 +32,7 @@ class Tank : public GameObject {
     Cylinder* canon;
 
     public:
+    bool destroyed = false;
     Tank(Material* mat);
     void Animate(float deltaTime) override;
 
