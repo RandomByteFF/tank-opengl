@@ -37,7 +37,7 @@ void ParamSurface::Destroy() {
     spread = std::vector<vec3>(vtxData.size()/3);
 
     for (size_t i = 0; i < vtxData.size()/3; i++) {
-        spread[i] = normalize(vec3(rand() % 100, rand() % 100, rand() % 100));
+        spread[i] = normalize(vec3(rand() % 100-50, rand() % 100-50, rand() % 100-50));
     }
 
     Upload();
@@ -63,11 +63,11 @@ void ParamSurface::Draw()
 
 
             vec3 averageNormal = normalize((n1 + n2 + n3) / 3.0f);
-            vec3 offs = averageNormal* 0.3f * Time::DeltaTime();
+            vec3 offs = (averageNormal* 0.3f + spread[i/3] * 0.3f)*Time::DeltaTime();
             
-            vtxData[i].pos = vtxData[i].pos + offs + spread[i/3];
-            vtxData[i+1].pos = vtxData[i+1].pos + offs + spread[i/3];
-            vtxData[i+2].pos = vtxData[i+2].pos + offs + spread[i/3];
+            vtxData[i].pos = vtxData[i].pos + offs;
+            vtxData[i+1].pos = vtxData[i+1].pos + offs;
+            vtxData[i+2].pos = vtxData[i+2].pos + offs;
 
             Upload();
         }
