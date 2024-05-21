@@ -4,6 +4,9 @@
 #include "triangle.h"
 #include "circle.h"
 #include "plane.h"
+#include "bullet.h"
+#include "phong.h"
+#include "scene.h"
 
 class Track;
 class Tank : public GameObject {
@@ -11,6 +14,7 @@ class Tank : public GameObject {
     float speedLeft = 0;
     float animLeft = 0;
     float animRight = 0;
+    Material* bulletMat;
 
     void Rotate(float angle);
     void Move(float speed);
@@ -38,6 +42,7 @@ class Tank : public GameObject {
 
     vec3 GetFacing();
     vec3 GetLookDirection();
+    void Shoot();
 };
 
 class Track : public GameObject{

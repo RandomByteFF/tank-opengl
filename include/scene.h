@@ -4,7 +4,11 @@
 
 class Scene {
     std::vector<GameObject*> objects;
+    static Scene* active;
     public:
+    Scene() {
+        active = this;
+    }
     void AddObject(GameObject* object) {
         objects.push_back(object);
     }
@@ -18,6 +22,11 @@ class Scene {
             object->Draw();
         }
     }
+
+    static Scene* Get() {
+        return active;
+    }
+
     ~Scene() {
         for (GameObject* object : objects) {
             delete object;

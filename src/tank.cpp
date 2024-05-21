@@ -41,6 +41,8 @@ Tank::Tank(Material *mat) : GameObject()
     leftTrack = new Track(mat, false);
     AddChild(rightTrack);
     AddChild(leftTrack);
+
+    bulletMat = mat;
 }
 
 void Tank::Animate(float deltaTime) {
@@ -94,6 +96,17 @@ vec3 Tank::GetLookDirection() {
     vec3 facing = GetFacing();
     vec4 f = vec4(facing.x, facing.y, facing.z, 1) * RotationMatrix(angle, vec3(0, 0, 1));
     return vec3(f.x, f.y, f.z);
+}
+
+void Tank::Shoot() {
+    //magic
+    vec3 look = GetLookDirection();
+    vec3 perp = normalize(vec3(-look.y, look.x, 0));
+    vec4 lookRotated = vec4(look.x, look.y, look.z, 1) * RotationMatrix(-canon->rot.x-M_PI/2, perp);
+    vec3 rotatedLook = vec3(lookRotated.x, lookRotated.y, lookRotated.z);
+
+    Bullet* b = new Bullet(bulletMat, pos + rotatedLook*1.5 + look*0.3 + vec3(0,0,0.9), vec3(0.2, 0.2, 0.2), rotatedLook*10);
+    Scene::Get()->AddObject(b);
 }
 
 void Tank::Rotate(float angle) {

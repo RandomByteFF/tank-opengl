@@ -9,6 +9,7 @@
 #include "tank.h"
 #include "phongText.h"
 #include "pyramid.h"
+#include "bullet.h"
 
 
 Shader GPU;
@@ -73,6 +74,9 @@ void onKeyboard(unsigned char key, int pX, int pY){
 	}
 	if (key == 's') {
 		player->LiftCanon(-M_PI/36);
+	}
+	if (key == ' ') {
+		player->Shoot();
 	}
 }
 
