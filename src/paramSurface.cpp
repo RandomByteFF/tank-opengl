@@ -1,6 +1,7 @@
 #include "paramSurface.h"
 
 void ParamSurface::Create(size_t N, size_t M) {
+    vtxData.clear();
     this->N = N;
     this->M = M;
     nVtxStrip = (M + 1) * 2;

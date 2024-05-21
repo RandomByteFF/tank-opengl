@@ -37,6 +37,11 @@ Tank::Tank(Material *mat) : GameObject()
     turret->AddPrimitive(canon);
     AddChild(turret);
 
+    flag = new Flag(mat, vec3(0.75, -1.7, 0.8), vec3(0.5, 0.5, 0.5), vec3(M_PI/2, 0, M_PI/2));
+    AddPrimitive(flag);
+    Cylinder* pole = new Cylinder(mat, vec3(0.75, -1.2, 0.3), vec3(0.05, 0.05, 1.05), vec3(0, 0, 0));
+    AddPrimitive(pole);
+
     rightTrack = new Track(mat, true);
     leftTrack = new Track(mat, false);
     AddChild(rightTrack);
@@ -47,6 +52,7 @@ Tank::Tank(Material *mat) : GameObject()
 
 void Tank::Animate(float deltaTime) {
     if (destroyed) return;
+    flag->AddPhase(deltaTime);
     TurnRight(1.5*speedLeft * deltaTime);
     TurnLeft(1.5*speedRight * deltaTime);
     Rotate(1.5*speedRight * deltaTime);

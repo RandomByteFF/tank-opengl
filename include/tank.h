@@ -7,6 +7,7 @@
 #include "bullet.h"
 #include "phong.h"
 #include "scene.h"
+#include "flag.h"
 
 class Track;
 class Tank : public GameObject {
@@ -30,6 +31,7 @@ class Tank : public GameObject {
     Track* leftTrack;
     GameObject* turret;
     Cylinder* canon;
+    Flag* flag;
 
     public:
     bool destroyed = false;
