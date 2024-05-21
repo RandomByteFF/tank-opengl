@@ -39,9 +39,10 @@ void onInitialization(){
 	scene.AddObject(ground);
 	player = new Tank(mat);
 	enemy = new Tank(mat);
+	enemy->LiftCanon(M_PI/36);
 	EnemyAI::enemy = enemy;
 	EnemyAI::player = player;
-	enemy->pos = vec3(0, 5, 0);
+	enemy->pos = vec3(0-30, 20, 0);
 	scene.AddTank(player);
 	scene.AddTank(enemy);
 	scene.AddObject(new Pyramid(mat, vec3(5, 10, 2)));
@@ -85,6 +86,9 @@ void onKeyboard(unsigned char key, int pX, int pY){
 	}
 	if (key == ' ') {
 		player->Shoot();
+	}
+	if (key == 'h') {
+		EnemyAI::enemy = EnemyAI::enemy ? nullptr : enemy;
 	}
 }
 
