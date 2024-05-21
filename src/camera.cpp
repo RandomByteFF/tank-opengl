@@ -18,7 +18,7 @@ Camera::Camera()
     wLookat = vec3(0,0,1.1);
     wVup = vec3(0, 0, 1);
     fp = 0.1;
-    bp = 50;
+    bp = 60;
     UploadwEye();
 }
 

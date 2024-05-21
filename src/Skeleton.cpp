@@ -45,7 +45,12 @@ void onInitialization(){
 	enemy->pos = vec3(0-30, 20, 0);
 	scene.AddTank(player);
 	scene.AddTank(enemy);
-	scene.AddObject(new Pyramid(mat, vec3(5, 10, 2)));
+	scene.AddObject(new Pyramid(mat, vec3(5, 40, 2), vec3(5,5,5)));
+	scene.AddObject(new Pyramid(mat, vec3(45, 5, 2), vec3(5,5,5), vec3(0, 0, 1)));
+	scene.AddObject(new Pyramid(mat, vec3(35, -10, 3), vec3(5,5,5)));
+	scene.AddObject(new Pyramid(mat, vec3(-37, 12, 2.5), vec3(3,3,3)));
+	scene.AddObject(new Pyramid(mat, vec3(37, -12, 2.5), vec3(3,3,3)));
+	scene.AddObject(new Pyramid(mat, vec3(0, -40, 3.5), vec3(5,5,5), vec3(0, 0, 1)));
 
 	lastFrame = glutGet(GLUT_ELAPSED_TIME) / 1000;
 }
